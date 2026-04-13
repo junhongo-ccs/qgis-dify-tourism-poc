@@ -1,50 +1,39 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# QGIS Dify Tourism PoC Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Grounded Outputs First
+Every user-facing answer must be grounded in explicit spatial or textual indicators derived from approved source data. The system must not present unsupported impressions, safety claims, popularity claims, or forecasts as facts.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. QGIS Computes, LLM Interprets
+QGIS is the source of truth for data integration, spatial processing, and feature generation. The LLM layer must operate on structured summaries and evidence fields rather than on vague freeform prompts or untraceable intuition.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Explainability Over Cleverness
+Each answer must include the indicators or observations that support it. Short, interpretable explanations are preferred over creative but weakly grounded prose.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Public Data and Reproducibility
+The baseline PoC must rely on free public datasets and reproducible processing steps. Data sources, transformations, and assumptions must be documented well enough for another contributor to rerun the analysis.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Incremental Validation
+Features must be developed as independently testable slices, beginning with a small number of sample areas. Expansion to more areas or richer text sources happens only after grounding quality and answer usefulness are demonstrated.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Data and Quality Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Approved baseline sources are free public datasets such as OpenStreetMap, administrative boundaries, transport nodes, public tourism CSVs, and Wikimedia-related metadata.
+- Any derived label such as "calm", "historic", or "walkable" must be tied to observable indicators or keyword evidence.
+- Raw user-facing outputs must clearly distinguish interpretation from objective measurement.
+- The PoC should favor low-cost, maintainable components and avoid proprietary data dependencies in the initial version.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Use `/speckit.specify` to define the user value in technology-agnostic terms.
+- Use `/speckit.clarify` before planning if ranking logic, area units, or evaluation criteria remain ambiguous.
+- Use `/speckit.plan` to lock in the QGIS processing flow, Dify orchestration, evidence schema, and evaluation approach.
+- Use `/speckit.tasks` only after the plan identifies concrete artifacts, sample areas, and measurable success checks.
+- Review all specs for grounding, reproducibility, and clear source-to-answer traceability before implementation.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution takes precedence over convenience, novelty, and ungrounded model behavior. Any exception must document why it is needed, what simpler grounded alternative was rejected, and how the resulting risk will be contained. All specifications, plans, and reviews must verify compliance with these principles.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-04-13 | **Last Amended**: 2026-04-13
