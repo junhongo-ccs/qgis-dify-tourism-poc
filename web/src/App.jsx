@@ -18,12 +18,6 @@ const metricCards = [
   { label: '確認の仕方', detail: '地図と会話で見比べる' },
 ]
 
-const chatPrompts = [
-  'このエリアはどんな観光体験に向いていますか？',
-  '品川とお台場はどう違いますか？',
-  '初めての来訪者にとって歩きやすいのはどこですか？',
-]
-
 const areaMeta = {
   shinagawa: {
     accent: 'from-cyan-400 to-sky-600',
@@ -589,26 +583,7 @@ function App() {
               </p>
             </div>
 
-            <div className="mt-5 rounded-[32px] border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">よく使う質問</p>
-                <p className="text-[11px] text-slate-500">{conversationId ? '会話を続けています' : '新しい会話です'}</p>
-              </div>
-              <div className="mt-3 space-y-2">
-                {chatPrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => setChatInput(prompt)}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-[11px] leading-5 text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-5 flex min-h-[34rem] flex-col rounded-[32px] bg-slate-950 p-4 text-white">
+            <div className="mt-4 flex min-h-[38rem] flex-col rounded-[32px] bg-slate-950 p-4 text-white">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-400">やり取り</p>
                 <p className="text-[11px] text-slate-400">{difyEndpoint ? '接続準備中' : '未接続'}</p>
