@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { GeoJSON, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { phase1AreaGeojson } from './areaGeojson'
+import { buildTourismContext, createLocalAssistantReply, postChatMessage } from './difyChat'
 
 const metricDefinitions = [
   { key: 'cafe', label: 'カフェ', countField: 'cafe_count', densityField: 'cafe_density' },
@@ -12,9 +13,9 @@ const metricDefinitions = [
 ]
 
 const metricCards = [
-  { label: '対象エリア数', value: '4', detail: 'Phase 1 のポリゴン' },
-  { label: '指標カテゴリ', value: '5', detail: '件数と密度を表示' },
-  { label: '回答モード', value: '根拠重視', detail: '指標に基づいて説明' },
+  { label: '対象エリア', detail: '品川・大井町・芝公園・お台場' },
+  { label: '見ている項目', detail: 'カフェ、レストラン、ミュージアム、ホテル、駅' },
+  { label: '確認の仕方', detail: '地図と会話で見比べる' },
 ]
 
 const chatPrompts = [
@@ -184,11 +185,6 @@ function toAreaRecord(row) {
   }
 }
 
-function formatMetricValue(value) {
-  if (value === null || Number.isNaN(value)) return 'N/A'
-  return Number.isInteger(value) ? String(value) : value.toFixed(2)
-}
-
 function getFeatureCenter(feature) {
   const ring = feature?.geometry?.coordinates?.[0] ?? []
   if (ring.length === 0) {
@@ -216,6 +212,23 @@ function getFeatureBounds(features) {
     [Math.min(...lats), Math.min(...lngs)],
     [Math.max(...lats), Math.max(...lngs)],
   ]
+}
+
+function createMessageId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function createChatMessage(role, content, meta = {}) {
+  return {
+    id: `${role}-${createMessageId()}`,
+    role,
+    content,
+    meta,
+  }
 }
 
 function clamp(value, min, max) {
@@ -378,15 +391,27 @@ function App() {
   const [areas, setAreas] = useState([])
   const [activeAreaId, setActiveAreaId] = useState('shinagawa')
   const [popupAreaId, setPopupAreaId] = useState('shinagawa')
+  const [chatMessages, setChatMessages] = useState(() => [
+    createChatMessage('assistant', 'エリアを選んで質問すると、ここで会話できます。まずは気になる観点を投げてください。', {
+      source: 'welcome',
+    }),
+  ])
+  const [chatInput, setChatInput] = useState('')
+  const [chatError, setChatError] = useState('')
+  const [conversationId, setConversationId] = useState('')
+  const [isSending, setIsSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const chatEndRef = useRef(null)
+  const difyEndpoint = import.meta.env.VITE_DIFY_CHAT_ENDPOINT?.trim() ?? ''
+  const difyUserId = import.meta.env.VITE_DIFY_USER_ID?.trim() || 'qgis-tourism-poc'
 
   useEffect(() => {
     let active = true
     async function loadAreas() {
       try {
         const response = await fetch('/exports/phase1_areas_summary_counts.csv')
-        if (!response.ok) throw new Error(`Failed to load CSV: ${response.status}`)
+        if (!response.ok) throw new Error(`Failed to load data: ${response.status}`)
         const rows = parseCsv(await response.text())
         if (!active) return
         const mapped = rows.map(toAreaRecord)
@@ -397,7 +422,7 @@ function App() {
         setError('')
       } catch (loadError) {
         if (!active) return
-        setError(loadError instanceof Error ? loadError.message : 'CSV の読み込みで不明なエラーが発生しました')
+        setError(loadError instanceof Error ? loadError.message : 'データの読み込みで不明なエラーが発生しました')
       } finally {
         if (active) setLoading(false)
       }
@@ -420,77 +445,118 @@ function App() {
     return { left, right }
   }, [activeAreaId, areas])
 
-  const comparisonRows = useMemo(() => {
-    const { left, right } = selectedAreas
-    if (!left || !right) return []
-    return metricDefinitions.slice(0, 3).map((metric) => {
-      const leftValue = left.densities[metric.key] ?? left.counts[metric.key]
-      const rightValue = right.densities[metric.key] ?? right.counts[metric.key]
-      const total = leftValue + rightValue
-      return {
-        label: left.densities[metric.key] !== null && right.densities[metric.key] !== null ? `${metric.label}密度` : `${metric.label}件数`,
-        leftValue,
-        rightValue,
-        winner: leftValue === rightValue ? '同率' : leftValue > rightValue ? left.name : right.name,
-        leftShare: total === 0 ? 50 : Math.max(18, Math.round((leftValue / total) * 100)),
-      }
+  const selectedArea = selectedAreas.left
+  const comparisonArea = selectedAreas.right
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [chatMessages, isSending])
+
+  async function sendChatMessage(messageText) {
+    const text = messageText.trim()
+    if (!text || isSending) return
+
+    const nextUserMessage = createChatMessage('user', text)
+    setChatMessages((current) => [...current, nextUserMessage])
+    setChatInput('')
+    setChatError('')
+    setIsSending(true)
+
+    const context = buildTourismContext({
+      areas,
+      selectedArea,
+      comparisonArea,
+      question: text,
     })
-  }, [selectedAreas])
 
-  const insightLines = useMemo(() => {
-    const { left, right } = selectedAreas
-    if (!left || !right) return []
-    const foodLeader = left.counts.restaurant >= right.counts.restaurant ? left.name : right.name
-    const stationLeader = left.counts.station >= right.counts.station ? left.name : right.name
-    return [
-      `今回の出力では ${foodLeader} のレストラン件数が多く、食を軸にした説明を付けやすいです。`,
-      `今回の出力では ${stationLeader} の駅件数が多く、アクセスしやすさの説明を慎重に補強できます。`,
-      '雰囲気、家族向け適性、人気度のような表現は、この要約指標だけでは断定せず追加根拠を待つべきです。',
-    ]
-  }, [selectedAreas])
+    if (!difyEndpoint) {
+      setChatMessages((current) => [
+        ...current,
+        createChatMessage(
+          'assistant',
+          createLocalAssistantReply({
+            question: text,
+            selectedArea,
+            comparisonArea,
+          }),
+          {
+            source: 'local-fallback',
+          },
+        ),
+      ])
+      setIsSending(false)
+      return
+    }
 
-  const assistantReply = useMemo(() => {
-    const { left, right } = selectedAreas
-    if (!left || !right) return '要約データの読み込みを待っています。'
-    return `${left.name} は、今回の出力ではレストランとカフェの件数が多く、さらに駅とホテルも同じエリア内に一定数あるため、最初の滞在拠点としてやや扱いやすい可能性があります。${right.name} と比べると、飲食選択肢がまとまっている解釈を出しやすいですが、これはあくまで指標にもとづく解釈であり、断定的な順位づけではありません。`
-  }, [selectedAreas])
+    try {
+      const result = await postChatMessage({
+        endpoint: difyEndpoint,
+        userId: difyUserId,
+        conversationId,
+        question: text,
+        context,
+      })
+      setConversationId(result.conversationId ?? conversationId)
+      setChatMessages((current) => [
+        ...current,
+        createChatMessage('assistant', result.answer || '返答が届きませんでした。', {
+          source: 'dify',
+        }),
+      ])
+    } catch (sendError) {
+      setChatError(sendError instanceof Error ? sendError.message : '送信に失敗しました')
+      setChatMessages((current) => [
+        ...current,
+        createChatMessage(
+          'assistant',
+          createLocalAssistantReply({
+            question: text,
+            selectedArea,
+            comparisonArea,
+          }) + ' いまはローカル代替応答を表示しています。',
+          {
+            source: 'fallback-after-error',
+          },
+        ),
+      ])
+    } finally {
+      setIsSending(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.18),_transparent_30%),linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] text-slate-900">
-      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="mb-4 rounded-[28px] border border-white/70 bg-white/65 p-5 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col overflow-x-hidden px-6 py-4 sm:px-8 lg:px-10 xl:px-12">
+        <header className="mb-4 rounded-[28px] border border-white/70 bg-white/65 px-4 py-4 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:px-5 sm:py-4 lg:px-6 lg:py-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.35em] text-cyan-700">QGIS + Dify Tourism PoC</p>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">地図を主役にした、根拠付き観光インサイト画面。</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">この React 画面は QGIS から出力した CSV を読み込み、固定データではなく実データをもとに比較表示できます。</p>
+              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-[2.1rem] xl:text-[2.25rem]">地図を見て、エリアの違いをつかむ。</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">地図のポリゴンを選ぶと、右側で質問しながら見比べられます。</p>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[34rem]">
               {metricCards.map((card) => (
-                <article key={card.label} className="rounded-2xl border border-slate-200/80 bg-slate-950 px-4 py-4 text-white shadow-lg shadow-slate-950/10">
-                  <p className="text-xs uppercase tracking-[0.22em] text-slate-400">{card.label}</p>
-                  <p className="mt-2 text-2xl font-semibold">{card.value}</p>
-                  <p className="mt-1 text-sm text-slate-300">{card.detail}</p>
+                <article key={card.label} className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-4 text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+                  <p className="text-xs uppercase tracking-[0.22em] text-slate-500">{card.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">{card.detail}</p>
                 </article>
               ))}
             </div>
           </div>
         </header>
 
-        <main className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <main className="grid flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="grid min-h-0 gap-4">
-            <div className="relative overflow-hidden rounded-[32px] p-0">
+            <div className="relative overflow-hidden p-0">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,_rgba(56,189,248,0.10),_transparent_28%),radial-gradient(circle_at_80%_15%,_rgba(250,204,21,0.10),_transparent_20%)]" />
-              <div className="relative z-10 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">メインマップ</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-slate-950">Phase 1 観光エリア</h2>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">OSM ベースマップの上に 4 エリアのポリゴンを重ねています。エリアをクリックすると、地図内に概要カードが表示されます。</p>
+              <div className="relative z-10 flex items-start justify-between gap-4 pl-2 pr-2 pt-2 sm:pl-4 sm:pr-4 sm:pt-4">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">地図</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-950">観光エリア</h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">地図上のエリアを選ぶと、カードで要点が見られます。</p>
                 </div>
-                <div className="hidden rounded-full border border-cyan-400/40 bg-cyan-50 px-4 py-2 text-xs font-medium text-cyan-700 sm:block">ドラッグ・ズーム可能</div>
+                <div className="hidden rounded-full border border-cyan-400/40 bg-cyan-50 px-4 py-2 text-xs font-medium text-cyan-700 sm:block sm:shrink-0">地図は動かせます</div>
               </div>
 
-              <div className="relative z-10 mt-5">
+              <div className="relative z-10 mt-4">
                 <div className="relative h-[calc(100vh-18rem)] min-h-[34rem] overflow-hidden rounded-[24px] bg-white lg:h-[calc(100vh-12rem)]">
                   {!loading && !error ? (
                     <TourismMap
@@ -501,7 +567,7 @@ function App() {
                       onDismissPopup={() => setPopupAreaId('')}
                     />
                   ) : null}
-                  {loading ? <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-cyan-300/20 bg-slate-900/80 px-4 py-3 text-sm text-cyan-100">CSV を読み込み中...</div> : null}
+                  {loading ? <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-cyan-300/20 bg-slate-900/80 px-4 py-3 text-sm text-cyan-100">エリア情報を読み込み中...</div> : null}
                   {error ? <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-rose-300/30 bg-rose-950/80 px-4 py-3 text-sm text-rose-100">{error}</div> : null}
                 </div>
               </div>
@@ -509,59 +575,105 @@ function App() {
           </section>
 
           <aside className="rounded-[32px] border border-white/75 bg-white/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-700">Dify レール</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-950">根拠付きアシスタント</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">このパネルは、将来の Dify 埋め込みや API 応答面を想定しています。いまは最終体験のトーンと構成を示しています。</p>
-            <div className="mt-5 rounded-[28px] bg-slate-950 p-4 text-white">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-400">質問候補</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-700">質問する</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">エリアについて聞く</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              選んだエリアをもとに、気になる点をそのまま質問できます。
+            </p>
+
+            <div className="mt-5 rounded-[22px] border border-slate-200 bg-white px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">選択中のエリア</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                {selectedArea?.name ?? 'エリアを選択してください'}
+              </p>
+            </div>
+
+            <div className="mt-5 rounded-[32px] border border-slate-200 bg-white p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">よく使う質問</p>
+                <p className="text-[11px] text-slate-500">{conversationId ? '会話を続けています' : '新しい会話です'}</p>
+              </div>
               <div className="mt-3 space-y-2">
                 {chatPrompts.map((prompt) => (
-                  <button key={prompt} type="button" className="w-full rounded-2xl border border-white/10 bg-white/7 px-4 py-3 text-left text-sm transition hover:bg-white/12">{prompt}</button>
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => setChatInput(prompt)}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-[13px] leading-6 text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50"
+                  >
+                    {prompt}
+                  </button>
                 ))}
               </div>
             </div>
-            <div className="mt-5 space-y-4">
-              <article className="rounded-[28px] border border-slate-200 bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">回答例</p>
-                <p className="mt-3 text-sm leading-6 text-slate-700">{assistantReply}</p>
-              </article>
-              <article className="rounded-[28px] border border-slate-200 bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">比較の要点</p>
-                <div className="mt-3 space-y-3">
-                  {comparisonRows.map((row) => (
-                    <div key={row.label}>
-                      <div className="mb-1 flex items-center justify-between text-sm text-slate-600">
-                        <span>{row.label}</span>
-                        <span className="font-medium text-slate-950">{row.winner}</span>
-                      </div>
-                      <div className="grid grid-cols-[56px_minmax(0,1fr)_56px] items-center gap-2">
-                        <span className="text-right text-xs font-semibold text-slate-950">{formatMetricValue(row.leftValue)}</span>
-                        <div className="flex h-2 overflow-hidden rounded-full bg-slate-200">
-                          <div className="h-full rounded-full bg-cyan-500" style={{ width: `${row.leftShare}%` }} />
-                          <div className="h-full rounded-full bg-rose-400" style={{ width: `${100 - row.leftShare}%` }} />
-                        </div>
-                        <span className="text-xs font-semibold text-slate-950">{formatMetricValue(row.rightValue)}</span>
-                      </div>
+
+            <div className="mt-5 flex min-h-[34rem] flex-col rounded-[32px] bg-slate-950 p-4 text-white">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.22em] text-slate-400">やり取り</p>
+                <p className="text-[11px] text-slate-400">{difyEndpoint ? '接続準備中' : '未接続'}</p>
+              </div>
+              <div className="mt-4 flex-1 space-y-3 overflow-auto pr-1">
+                {chatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[88%] rounded-[24px] px-4 py-3 text-sm leading-6 ${
+                        message.role === 'user'
+                          ? 'bg-cyan-500 text-slate-950'
+                          : 'border border-white/10 bg-white/7 text-slate-100'
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap">{message.content}</p>
                     </div>
-                  ))}
+                  </div>
+                ))}
+                {isSending ? (
+                  <div className="flex justify-start">
+                    <div className="rounded-[24px] border border-white/10 bg-white/7 px-4 py-3 text-sm leading-6 text-slate-300">
+                      送信中...
+                    </div>
+                  </div>
+                ) : null}
+                <div ref={chatEndRef} />
+              </div>
+
+              <form
+                className="mt-4 rounded-[28px] border border-white/10 bg-white/5 p-3"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  sendChatMessage(chatInput)
+                }}
+              >
+                <label className="text-xs uppercase tracking-[0.22em] text-slate-400" htmlFor="chat-input">
+                  質問する
+                </label>
+                <textarea
+                  id="chat-input"
+                  value={chatInput}
+                  onChange={(event) => setChatInput(event.target.value)}
+                  rows={3}
+                  placeholder="例: このエリアはどんな観光体験に向いていますか？"
+                  className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400"
+                />
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p className="text-xs leading-5 text-slate-400">Enter で送信、Shift+Enter で改行</p>
+                  <button
+                    type="submit"
+                    disabled={!chatInput.trim() || isSending}
+                    className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+                  >
+                    送信
+                  </button>
                 </div>
-              </article>
-              <article className="rounded-[28px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">根拠メモ</p>
-                <div className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-                  {insightLines.map((line) => (
-                    <p key={line}>{line}</p>
-                  ))}
-                </div>
-              </article>
-              <article className="rounded-[28px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">この回答が許される理由</p>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-                  <li>QGIS から出力された件数と密度だけを使っています。</li>
-                  <li>人気、安全性、属性推定のような断定は避けています。</li>
-                  <li>結論ではなく、指標にもとづく解釈として表現しています。</li>
-                </ul>
-              </article>
+              </form>
+
+              {chatError ? (
+                <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm leading-6 text-rose-100">
+                  {chatError}
+                </p>
+              ) : null}
             </div>
           </aside>
         </main>
