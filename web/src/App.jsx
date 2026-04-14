@@ -233,7 +233,18 @@ function isComposingEvent(event) {
   return event.nativeEvent?.isComposing || event.isComposing || event.keyCode === 229
 }
 
-const panelHeightClass = 'h-[calc(100dvh-12rem)] min-h-[34rem]'
+function toUserFacingChatError(error) {
+  if (!(error instanceof Error)) {
+    return '一時的に応答を取得できませんでした。もう一度お試しください。'
+  }
+
+  const message = error.message?.trim()
+  if (!message || message === 'Failed to fetch') {
+    return '接続に失敗しました。しばらくしてから、もう一度お試しください。'
+  }
+
+  return message
+}
 
 function splitMessageContent(message) {
   if (message.role !== 'assistant') {
@@ -530,7 +541,7 @@ function App() {
         }),
       ])
     } catch (sendError) {
-      setChatError(sendError instanceof Error ? sendError.message : '送信に失敗しました')
+      setChatError(toUserFacingChatError(sendError))
       setChatMessages((current) => [
         ...current,
         createChatMessage(
@@ -551,9 +562,9 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.18),_transparent_30%),linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] text-slate-900">
-      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col overflow-x-hidden px-6 py-4 sm:px-8 lg:px-10 xl:px-12">
-        <header className="mb-4 rounded-[28px] border border-white/70 bg-white/65 px-4 py-4 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:px-5 sm:py-4 lg:px-6 lg:py-4">
+    <div className="h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.18),_transparent_30%),linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] text-slate-900">
+      <div className="mx-auto flex h-full max-w-[1600px] flex-col overflow-hidden px-6 py-4 sm:px-8 lg:px-10 xl:px-12">
+        <header className="mb-4 shrink-0 rounded-[28px] border border-white/70 bg-white/65 px-4 py-4 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:px-5 sm:py-4 lg:px-6 lg:py-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-[2.1rem] xl:text-[2.25rem]">地図を見て、エリアの違いをつかむ。</h1>
@@ -570,7 +581,7 @@ function App() {
           </div>
         </header>
 
-        <main className={`grid flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px] ${panelHeightClass}`}>
+        <main className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="grid min-h-0 h-full">
             <div className="relative flex h-full min-h-0 flex-col overflow-hidden p-0">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,_rgba(56,189,248,0.10),_transparent_28%),radial-gradient(circle_at_80%_15%,_rgba(250,204,21,0.10),_transparent_20%)]" />
@@ -601,7 +612,7 @@ function App() {
             </div>
           </section>
 
-          <aside className="flex h-full min-h-0 flex-col rounded-[32px] border border-white/75 bg-white/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
+          <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/75 bg-white/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
             <div className="shrink-0">
               <h2 className="text-2xl font-semibold text-slate-950">エリアについて聞く</h2>
 
