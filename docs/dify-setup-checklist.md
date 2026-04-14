@@ -13,7 +13,7 @@ This matches the frontend flow that sends `query` plus `inputs` to `POST /v1/cha
 
 ## Prompt
 
-Paste the draft from `docs/dify-prompt-draft.md`.
+Paste the canonical source from `docs/dify-prompt-canonical.md`.
 
 Keep these rules in the prompt:
 
@@ -21,6 +21,7 @@ Keep these rules in the prompt:
 - answer in Japanese
 - do not claim popularity, safety, crowd size, or atmosphere unless the payload supports it
 - mention whether an answer is based on counts, density, or both
+- if the prompt needs revision later, update `docs/dify-prompt-canonical.md` first and then sync Dify
 
 ## Variables
 
@@ -29,7 +30,7 @@ Add one custom input variable:
 - variable name: `tourism_context`
 - label: `選択中のエリア情報`
 - type: paragraph or long text
-- required: yes
+- required: no
 
 The frontend will send this as structured JSON text.
 
@@ -60,7 +61,7 @@ Before starting:
 - in this repo, `nvm use` will read `.nvmrc`
 - `Node 14` is too old for the current `package-lock.json` and Vite toolchain
 
-1. `git switch codex/map-ui-dify-integration`
+1. `git switch master`
 2. `cd web`
 3. run `nvm use`
 4. create `.env` from `web/.env.example`
@@ -82,3 +83,4 @@ Before starting:
 - The proxy already expects `tourism_context`
 - The right rail can keep working in local fallback mode if Dify is not yet connected
 - Web app access permissions in Dify are separate from API access
+- The current production setup already uses Railway plus a server-side Dify proxy

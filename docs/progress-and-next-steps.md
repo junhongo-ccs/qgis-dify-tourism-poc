@@ -28,8 +28,34 @@ Work completed in the React / Dify-side PoC:
 - the right rail works as a lightweight question-and-answer surface
 - local chat fallback exists so the UI can be exercised before Dify is connected
 - a small Dify proxy contract was added for `POST /api/dify/chat`
-- a grounded prompt draft and setup checklist were added for the Dify app
+- a canonical Dify prompt source now exists at `docs/dify-prompt-canonical.md`
 - Railway deployment is now the target for the frontend build
+- the Railway production deployment is live and GitHub-linked
+- the Dify app has been created, published, and connected through the server-side proxy
+- the right rail now uses a desktop-oriented fixed-height layout with internal scroll
+- assistant replies are split into multiple chat bubbles by blank lines
+- the custom duplicate suggested-question block in the right rail was removed
+- the input area now uses Enter to send, Shift+Enter to newline, and ignores IME composition Enter
+- the map popup now focuses on facts:
+  - area name
+  - theme label
+  - icon/count summary
+  - factual count breakdown
+- the popup no longer shows:
+  - the decorative colored square
+  - the old narrative interpretation line
+- the user-facing theme label for `gateway` is now `移動拠点`
+
+## Live State As Of 2026-04-15
+
+The current live PoC state is:
+
+- Railway production is serving the frontend build from `master`
+- Dify API access is configured server-side through Railway variables
+- the Dify app uses `tourism_context` as the grounded input variable
+- `docs/dify-prompt-canonical.md` is the single source of truth for the Dify prompt
+- the canonical prompt has also been pasted into the Dify app
+- the current focus has shifted from infrastructure setup to UX and prompt tuning
 
 ## Latest Known Summary Fields
 
@@ -93,39 +119,38 @@ Intermediate layers that can be deleted or recreated:
 
 If the next session starts on a Mac, resume in this order:
 
-1. open the repository and confirm the branch is `codex/map-ui-dify-integration`
+1. open the repository and confirm the branch is `master`
 2. run `nvm use` in the repo root and in `web/` so `Node 24.13.1` is selected
 3. verify the React app still loads the summary CSV and the right chat rail
-4. copy `web/.env.example` and `web/.env.proxy.example` into local `.env` files
-5. create the Dify chat app using `docs/dify-setup-checklist.md`
-6. paste the prompt draft from `docs/dify-prompt-draft.md`
-7. set the app variable `tourism_context`
-8. point `VITE_DIFY_CHAT_ENDPOINT` to the local proxy
-9. enter the Dify API key only on the server side
-10. when the app is ready to publish, connect the GitHub repo to Railway and deploy the Dockerfile build
+4. confirm `docs/dify-prompt-canonical.md` is still the only prompt source to edit
+5. if testing locally, copy `web/.env.example` and `web/.env.proxy.example` into local `.env` files
+6. point `VITE_DIFY_CHAT_ENDPOINT` to the local proxy if needed
+7. keep the Dify API key server-side only
+8. if prompt behavior changes, update the canonical prompt file first and only then sync Dify
 
 ## Recommended Task Sequence For Next Session
 
 Resume work in this order.
 
-### Task 1. Finish the Dify app
+### Task 1. Continue prompt tuning from the canonical source
 
-- publish the Chat App
-- add the `tourism_context` input variable
-- paste the grounded prompt
-- obtain the app API key
+- edit `docs/dify-prompt-canonical.md` first
+- sync the prompt changes into the Dify app
+- keep outputs short, paragraph-based, and UI-friendly
+- preserve the grounding rule that only `tourism_context` may be used
 
-### Task 2. Connect the local proxy
+### Task 2. Keep the chat UI stable on desktop
 
-- create `.env` files from the examples
-- run `npm run dify:proxy`
-- point the frontend to the local proxy endpoint
+- preserve the fixed-height right rail
+- keep only the message list scrollable
+- preserve the Enter / Shift+Enter behavior and IME-safe send handling
+- verify long answers do not push the page height
 
-### Task 3. Verify the live answer path
+### Task 3. Continue refining the map-popup / chat role split
 
-- send one question from the right rail
-- confirm the response comes back from Dify
-- check that the right rail still falls back cleanly when the proxy is absent
+- keep the popup factual and compact
+- keep interpretation inside chat responses, not inside the popup
+- preserve the icon-and-count UI in the popup
 
 ### Task 4. Optional future QGIS enrichment
 
@@ -139,8 +164,9 @@ At the start of the next session:
 1. open `qgis/phase1-tourism-poc.qgz`
 2. confirm `phase1_areas_polygon` is present
 3. confirm the latest summary CSV is present
-4. inspect the right rail copy before editing the Dify app
-5. keep the API key server-side only
+4. inspect the right rail behavior before changing layout or prompt rules
+5. edit `docs/dify-prompt-canonical.md` before editing the Dify app prompt
+6. keep the API key server-side only
 
 ## Notes On What Not To Repeat
 
@@ -153,7 +179,7 @@ At the start of the next session:
 
 If the next session goes well, the deliverables should be:
 
-- live Dify answer path from the right rail
-- published Dify app with the grounded prompt
-- server-side API key configuration
+- a shorter, more stable Dify response style tuned from the canonical prompt
+- final confirmation that long desktop chat sessions stay inside the fixed right rail
+- any remaining popup copy or theme-label cleanup
 - optional extra QGIS evidence fields if needed later
