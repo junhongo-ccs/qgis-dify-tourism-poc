@@ -42,7 +42,7 @@ const areaMeta = {
 }
 
 const themeLabels = {
-  gateway: '移動拠点型',
+  gateway: '移動拠点',
   redevelopment_mixed_urban: '再開発・都市回遊',
   landmark_park_walk: 'ランドマーク・公園散策',
   waterfront_leisure: 'ウォーターフロント・レジャー',
@@ -129,34 +129,7 @@ function createAreaNote(areaName, strongestMetric) {
 
 function createPopupFact(area) {
   if (!area) return ''
-  return `カフェ ${area.counts.cafe}件、レストラン ${area.counts.restaurant}件、駅 ${area.counts.station}件、ホテル ${area.counts.hotel}件を確認しています。`
-}
-
-function createPopupNarrative(area) {
-  if (!area) return ''
-
-  const strongest = area.strongestMetric?.key
-
-  switch (area.id) {
-    case 'shinagawa':
-      return strongest === 'restaurant'
-        ? 'ゲートウェイ系のテーマに対して、レストラン 53件が最も強いシグナルです。'
-        : 'ゲートウェイ系のテーマで、飲食と宿泊がまとまって見える構成です。'
-    case 'oimachi':
-      return strongest === 'restaurant'
-        ? '再開発・都市回遊のテーマで、レストラン 16件が中心です。'
-        : '再開発・都市回遊のテーマで、カフェと駅がほどよく混ざっています。'
-    case 'shiba_park_tokyo_tower':
-      return strongest === 'restaurant'
-        ? 'ランドマーク・公園散策のテーマで、レストラン 38件が目立ちます。'
-        : 'ランドマーク・公園散策のテーマで、歩きながら使う飲食が支えています。'
-    case 'odaiba':
-      return strongest === 'station'
-        ? 'ウォーターフロント・レジャーのテーマで、駅 12件が動線の強さを示しています。'
-        : 'ウォーターフロント・レジャーのテーマで、駅とレストランとミュージアムが混ざります。'
-    default:
-      return createPopupFact(area)
-  }
+  return `カフェ ${area.counts.cafe}件、レストラン ${area.counts.restaurant}件、ミュージアム ${area.counts.museum}件、ホテル ${area.counts.hotel}件、駅 ${area.counts.station}件`
 }
 
 function toAreaRecord(row) {
@@ -308,7 +281,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
     function updatePosition() {
       const point = map.latLngToContainerPoint(popupPosition)
       const cardWidth = 320
-      const cardHeight = 238
+      const cardHeight = 156
       const mapSize = map.getSize()
       const left = clamp(point.x - cardWidth / 2, 16, mapSize.x - cardWidth - 16)
       const top = clamp(point.y - cardHeight - 18, 16, mapSize.y - cardHeight - 16)
@@ -344,7 +317,6 @@ function PopupOverlay({ popupArea, popupPosition }) {
             <p className="text-3xl font-semibold tracking-tight text-white">{popupArea.name}</p>
             <p className="mt-1 text-base text-slate-300">{popupArea.tone}</p>
           </div>
-          <div className={`h-12 w-12 rounded-2xl bg-gradient-to-br ${popupArea.accent} shadow-lg`} />
         </div>
         <div className="mt-4 grid grid-cols-5 gap-2 text-center text-xs">
           {Object.entries(popupArea.counts).map(([key, value]) => (
@@ -360,8 +332,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-sm leading-6 text-slate-200">{createPopupNarrative(popupArea)}</p>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{createPopupFact(popupArea)}</p>
+        <p className="mt-4 text-sm leading-6 text-slate-300">{createPopupFact(popupArea)}</p>
       </div>
     </div>
   )
