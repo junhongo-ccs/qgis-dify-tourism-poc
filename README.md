@@ -1,33 +1,54 @@
 # qgis-dify-tourism-poc
 
-QGIS で観光エリア指標を作り、Dify で根拠付きの自然言語説明を返す PoC です。
+QGIS で観光エリア指標を作り、Dify で根拠付きの自然言語説明を返す PoC です。  
+地図を見ながらエリアを選び、右側チャットで比較や解釈を質問する体験を、CSV と構造化コンテキストでつないでいます。
 
-## Main Branches
+## Overview
 
-- `master`
-  - 設計資料と QGIS 作業ファイル中心
-- `codex/map-ui-dify-integration`
-  - `web/` の地図 UI と Dify 右レールを含む最新ブランチ
+この PoC では、まず QGIS で観光エリアのポリゴンを作り、各エリアについてカフェ・レストラン・ホテル・駅などの件数や密度を集計して CSV として書き出します。フロントエンドはその CSV を読み込み、地図上のエリア表示と、右側チャットで使う基礎データに変換します。ユーザーが地図上でエリアを選んで質問すると、フロントが選択エリア情報・比較対象・指標値・質問文をまとめた `tourism_context` という JSON を生成し、Dify 互換 API に POST します。Dify はその構造化データを根拠として自然文の回答を返し、フロントはその返答をチャット欄に表示します。
 
-ローカルで確認するときは、通常 `codex/map-ui-dify-integration` を使います。
+つまり、QGIS で作った空間集計結果を CSV 経由で Web UI に載せ、LLM には自由文ではなく構造化コンテキストを渡して説明させる構成です。
 
-## Local Verification
+## Why CSV Matters
 
-### QGIS
+CSV を中間成果物にしているのがこの構成の重要な点です。今後精度向上のために指標を増やしたい場合でも、まず QGIS 側で列を追加する形で拡張できます。どの項目が増えたかが表形式ではっきり見えるので、GIS 処理の変更点を追いやすく、フロント側も新しい列を読み込んで `tourism_context` に載せれば対応できます。Dify 側もその追加項目を新しい根拠として解釈できるため、GIS 処理、Web 表示、LLM 入力が疎結合に保たれます。
 
-QGIS で確認するファイル:
+結果として、分析指標の追加、比較ロジックの改善、説明精度の向上を段階的に進めやすい構成になっています。
 
-- `qgis/phase1-tourism-poc.qgz`
-- `data/boundaries/phase1-areas-working.gpkg`
+## Flow
 
-### Web UI
+1. QGIS で観光エリアのポリゴンを作成する
+2. エリアごとの件数・密度を集計し、CSV を出力する
+3. `web/` が CSV を読み込み、地図表示用データとチャット文脈を生成する
+4. ユーザーの質問時に `tourism_context` を Dify 互換 API へ送信する
+5. Dify の回答を右側チャットに表示する
 
-`web/` は `Node 24.13.1` 以上を前提にしています。
+## Repository Structure
 
-`Node 14` では `npm ci` や `vite` が失敗します。Windows 由来の古い `nvm` 設定やログインシェルの既定値が残っている場合は、先にバージョンを切り替えてください。
+- `qgis/`
+  QGIS プロジェクトファイル
+- `data/`
+  集計元データ、境界データ、CSV エクスポート
+- `web/`
+  React + Vite の地図 UI と Dify 右レール
+- `docs/`
+  設計メモ、プロンプト、運用チェックリスト
+
+## Local Setup
+
+前提:
+
+- Node `24.13.1` 以上
+- `nvm` 推奨
+
+注意:
+
+- `web/` は Node 14 では起動できません
+- Vite と依存パッケージが新しい Node 構文を使うため、Node 14 のままでは `npm ci` や `npm run dev` が失敗します
+
+Web UI 起動:
 
 ```bash
-git switch codex/map-ui-dify-integration
 nvm use
 cd web
 nvm use
@@ -38,11 +59,43 @@ npm run dev
 
 ブラウザ確認先:
 
-- `http://127.0.0.1:5173`
+- `http://localhost:5173/`
 
-### Dify Proxy
+## Windows Notes
 
-Dify 接続まで確認する場合:
+会社支給 PC などで既定の Node が 14 系でも、このリポジトリ専用に Node 24 系を使えれば開発できます。現実的な方法は次の 2 つです。
+
+### Option 1: nvm-windows を使う
+
+Windows の既定 Node を直接置き換えず、プロジェクト用に Node 24 を追加する方法です。
+
+```bash
+nvm install 24.13.1
+nvm use 24.13.1
+cd web
+npm ci
+npm run dev
+```
+
+### Option 2: WSL2 を使う
+
+Windows 側の Node が 14 のままでも、WSL2 上で Node 24 を使えば問題ありません。Node の切り替えや依存解決で詰まりにくいので、安定運用しやすい選択です。
+
+WSL2 側で:
+
+```bash
+nvm install 24.13.1
+nvm use 24.13.1
+cd web
+npm ci
+npm run dev
+```
+
+要するに、Windows PC でも開発は可能ですが、Node 14 固定のまま `web/` を動かすのは非現実的です。このプロジェクト用に Node 24 系を併用してください。
+
+## Dify Proxy
+
+Dify 接続まで含めて確認する場合:
 
 ```bash
 cd web
@@ -57,11 +110,20 @@ npm run dify:proxy
 - `DIFY_API_BASE_URL`
 - `DIFY_APP_PATH`
 
-`VITE_DIFY_CHAT_ENDPOINT` はローカル開発では `/api/dify/chat` を推奨します。
+ローカル開発では `VITE_DIFY_CHAT_ENDPOINT=/api/dify/chat` を想定しています。
+
+## Key Files
+
+- `qgis/phase1-tourism-poc.qgz`
+- `data/exports/phase1_areas_summary_counts.csv`
+- `web/src/App.jsx`
+- `web/src/difyChat.js`
+- `web/scripts/dify-proxy.mjs`
 
 ## Key Docs
 
 - `docs/poc-design.md`
+- `docs/dify-right-rail.md`
 - `docs/dify-setup-checklist.md`
 - `docs/railway-deploy.md`
 - `docs/progress-and-next-steps.md`
