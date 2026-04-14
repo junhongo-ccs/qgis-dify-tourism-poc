@@ -42,7 +42,7 @@ const areaMeta = {
 }
 
 const themeLabels = {
-  gateway: 'ゲートウェイ',
+  gateway: '移動拠点型',
   redevelopment_mixed_urban: '再開発・都市回遊',
   landmark_park_walk: 'ランドマーク・公園散策',
   waterfront_leisure: 'ウォーターフロント・レジャー',
