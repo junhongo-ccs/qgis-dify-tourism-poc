@@ -271,6 +271,7 @@ function MapFitBounds() {
 function PopupOverlay({ popupArea, popupPosition }) {
   const map = useMap()
   const [style, setStyle] = useState(null)
+  const cardRef = useRef(null)
 
   useEffect(() => {
     if (!popupArea || !popupPosition) {
@@ -281,10 +282,12 @@ function PopupOverlay({ popupArea, popupPosition }) {
     function updatePosition() {
       const point = map.latLngToContainerPoint(popupPosition)
       const cardWidth = 320
-      const cardHeight = 172
+      const pointerHeight = 20
+      const cardBodyHeight = cardRef.current?.offsetHeight ?? 156
+      const overlayHeight = cardBodyHeight + pointerHeight
       const mapSize = map.getSize()
       const left = clamp(point.x - cardWidth / 2, 16, mapSize.x - cardWidth - 16)
-      const top = clamp(point.y - cardHeight - 18, 16, mapSize.y - cardHeight - 16)
+      const top = clamp(point.y - overlayHeight, 16, mapSize.y - overlayHeight - 16)
 
       setStyle({
         left: `${left}px`,
@@ -309,6 +312,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
       aria-hidden="true"
     >
       <div
+        ref={cardRef}
         className="pointer-events-auto absolute w-[20rem] rounded-[28px] border border-white/10 bg-slate-950/96 p-4 text-white shadow-[0_24px_80px_rgba(15,23,42,0.45)] backdrop-blur"
         style={style}
       >
