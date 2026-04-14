@@ -599,7 +599,7 @@ function App() {
                     key={prompt}
                     type="button"
                     onClick={() => setChatInput(prompt)}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-[13px] leading-6 text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-[11px] leading-5 text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50"
                   >
                     {prompt}
                   </button>
