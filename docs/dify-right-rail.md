@@ -38,6 +38,20 @@ The frontend sends a Dify-compatible blocking chat request to the configured end
 
 The proxy that sits behind `VITE_DIFY_CHAT_ENDPOINT` should forward this payload to Dify and return the JSON response.
 
+## Local Proxy
+
+For local development, run a tiny proxy with:
+
+- `npm run dify:proxy` from `web/`
+
+The proxy expects:
+
+- `DIFY_API_KEY`
+- `DIFY_API_BASE_URL` or the default `https://api.dify.ai`
+- `DIFY_APP_PATH` or the default `/v1/chat-messages`
+
+The proxy converts the structured `tourism_context` object into a JSON string before sending it to Dify, because the prompt should treat it as grounded text evidence.
+
 ## Expected Response Shape
 
 The UI currently reads:
