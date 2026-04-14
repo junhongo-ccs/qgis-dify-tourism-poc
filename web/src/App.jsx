@@ -229,6 +229,12 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
+function isComposingEvent(event) {
+  return event.nativeEvent?.isComposing || event.isComposing || event.keyCode === 229
+}
+
+const panelHeightClass = 'h-[calc(100dvh-12rem)] min-h-[34rem]'
+
 function MapDismiss({ onDismiss }) {
   useMapEvents({
     click: (event) => {
@@ -531,18 +537,18 @@ function App() {
               {metricCards.map((card) => (
                 <article key={card.label} className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-4 text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
                   <p className="text-xs uppercase tracking-[0.22em] text-slate-500">{card.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">{card.detail}</p>
+                  <p className="mt-2 text-sm leading-[1.3] text-slate-700">{card.detail}</p>
                 </article>
               ))}
             </div>
           </div>
         </header>
 
-        <main className="grid flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="grid min-h-0 gap-4">
-            <div className="relative overflow-hidden p-0">
+        <main className={`grid flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px] ${panelHeightClass}`}>
+          <section className="grid min-h-0 h-full">
+            <div className="relative flex h-full min-h-0 flex-col overflow-hidden p-0">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,_rgba(56,189,248,0.10),_transparent_28%),radial-gradient(circle_at_80%_15%,_rgba(250,204,21,0.10),_transparent_20%)]" />
-              <div className="relative z-10 flex items-start justify-between gap-4 pl-2 pr-2 pt-2 sm:pl-4 sm:pr-4 sm:pt-4">
+              <div className="relative z-10 shrink-0 flex items-start justify-between gap-4 pl-2 pr-2 pt-2 sm:pl-4 sm:pr-4 sm:pt-4">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">地図</p>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-950">観光エリア</h2>
@@ -551,8 +557,8 @@ function App() {
                 <div className="hidden rounded-full border border-cyan-400/40 bg-cyan-50 px-4 py-2 text-xs font-medium text-cyan-700 sm:block sm:shrink-0">地図は動かせます</div>
               </div>
 
-              <div className="relative z-10 mt-4">
-                <div className="relative h-[calc(100vh-18rem)] min-h-[34rem] overflow-hidden rounded-[24px] bg-white lg:h-[calc(100vh-12rem)]">
+              <div className="relative z-10 mt-4 min-h-0 flex-1">
+                <div className="relative h-full overflow-hidden rounded-[24px] bg-white">
                   {!loading && !error ? (
                     <TourismMap
                       areas={areas}
@@ -569,23 +575,24 @@ function App() {
             </div>
           </section>
 
-          <aside className="rounded-[32px] border border-white/75 bg-white/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-700">質問する</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-950">エリアについて聞く</h2>
+          <aside className="flex h-full min-h-0 flex-col rounded-[32px] border border-white/75 bg-white/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
+            <div className="shrink-0">
+              <h2 className="text-2xl font-semibold text-slate-950">エリアについて聞く</h2>
 
-            <div className="mt-5 rounded-[22px] border border-slate-200 bg-white px-4 py-3">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">選択中のエリア</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
-                {selectedArea?.name ?? 'エリアを選択してください'}
-              </p>
+              <div className="mt-5 rounded-[22px] border border-slate-200 bg-white px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">選択中のエリア</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                  {selectedArea?.name ?? 'エリアを選択してください'}
+                </p>
+              </div>
             </div>
 
-            <div className="mt-4 flex min-h-[38rem] flex-col rounded-[32px] bg-slate-950 p-4 text-white">
-              <div className="flex items-center justify-between gap-3">
+            <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-[32px] bg-slate-950 p-4 text-white">
+              <div className="flex shrink-0 items-center justify-between gap-3">
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-400">やり取り</p>
-                <p className="text-[11px] text-slate-400">{difyEndpoint ? '接続準備中' : '未接続'}</p>
+                <p className="text-[11px] text-slate-400">{difyEndpoint ? 'Dify接続中' : '未接続'}</p>
               </div>
-              <div className="mt-4 flex-1 space-y-3 overflow-auto pr-1">
+              <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
                 {chatMessages.map((message) => (
                   <div
                     key={message.id}
@@ -613,37 +620,32 @@ function App() {
               </div>
 
               <form
-                className="mt-4 rounded-[28px] border border-white/10 bg-white/5 p-3"
+                className="mt-4 shrink-0 rounded-[28px] border border-white/10 bg-white/5 p-3"
                 onSubmit={(event) => {
                   event.preventDefault()
                   sendChatMessage(chatInput)
                 }}
               >
-                <label className="text-xs uppercase tracking-[0.22em] text-slate-400" htmlFor="chat-input">
-                  質問する
-                </label>
                 <textarea
                   id="chat-input"
                   value={chatInput}
                   onChange={(event) => setChatInput(event.target.value)}
-                  rows={3}
-                  placeholder="例: このエリアはどんな観光体験に向いていますか？"
-                  className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400"
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' || event.shiftKey || isComposingEvent(event)) return
+                    event.preventDefault()
+                    sendChatMessage(chatInput)
+                  }}
+                  rows={2}
+                  placeholder="入力例：このエリアはどんな観光体験に向いていますか？"
+                  className="w-full resize-none rounded-2xl border border-cyan-300/25 bg-slate-900 px-4 py-3 text-base leading-7 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-sm placeholder:leading-6 placeholder:text-slate-400 focus:border-cyan-300 focus:bg-slate-900"
                 />
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs leading-5 text-slate-400">Enter で送信、Shift+Enter で改行</p>
-                  <button
-                    type="submit"
-                    disabled={!chatInput.trim() || isSending}
-                    className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-                  >
-                    送信
-                  </button>
+                  <p className="text-xs leading-5 text-cyan-100/70">Enter で送信 / Shift+Enter で改行</p>
                 </div>
               </form>
 
               {chatError ? (
-                <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm leading-6 text-rose-100">
+                <p className="mt-3 shrink-0 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm leading-6 text-rose-100">
                   {chatError}
                 </p>
               ) : null}
