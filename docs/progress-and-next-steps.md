@@ -19,6 +19,16 @@ Work completed in QGIS:
 - QuickOSM was installed
 - OSM data retrieval was tested successfully
 - area-level counts were successfully aggregated into a summary layer
+- the summary layer was normalized and exported to CSV
+- `area_km2` and density fields were added for the final summary table
+
+Work completed in the React / Dify-side PoC:
+
+- the main screen now shows the map as the primary surface
+- the right rail works as a lightweight question-and-answer surface
+- local chat fallback exists so the UI can be exercised before Dify is connected
+- a small Dify proxy contract was added for `POST /api/dify/chat`
+- a grounded prompt draft and setup checklist were added for the Dify app
 
 ## Latest Known Summary Fields
 
@@ -28,24 +38,30 @@ The latest working summary table includes these fields:
 - `area_name`
 - `theme`
 - `status`
+- `area_km2`
 - `cafe_count`
 - `restaurant_count`
 - `museum_count`
 - `hotel_count`
 - `station_count`
+- `cafe_density`
+- `restaurant_density`
+- `museum_density`
+- `hotel_density`
+- `station_density`
 
-Latest observed values from the screenshot:
+Latest known values from the current export:
 
 | area_id | area_name | cafe_count | restaurant_count | museum_count | hotel_count | station_count |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `shinagawa` | `shinagwa` | 27 | 53 | 5 | 7 | 5 |
-| `oimachi` | `oimachi` | 10 | 16 | 0 | 3 | 3 |
+| `shinagawa` | `Shinagawa` | 27 | 53 | 5 | 7 | 5 |
+| `oimachi` | `Oimachi` | 10 | 16 | 0 | 3 | 3 |
 | `shiba_park_tokyo_tower` | `Shiba Park / Tokyo Tower` | 16 | 38 | 0 | 2 | 3 |
-| `odaiba` | `odaiba` | 18 | 29 | 5 | 2 | 12 |
+| `odaiba` | `Odaiba` | 18 | 29 | 5 | 2 | 12 |
 
-Important note:
+The cleaned CSV export now exists at:
 
-- `area_name` for `shinagawa` still has a typo and should be corrected to `Shinagawa`
+- `data/exports/phase1_areas_summary_counts.csv`
 
 ## Important Lessons Learned
 
@@ -72,72 +88,46 @@ Intermediate layers that can be deleted or recreated:
 - duplicate QuickOSM layers from failed or partial runs
 - obsolete table-only layer created from the original template export
 
-## Recommended First Task For Next Session
+## Suggested Restart On Mac
 
-Start by cleaning and normalizing the current summary layer.
+If the next session starts on a Mac, resume in this order:
 
-### 1. Fix naming issues
-
-Correct these values in the summary layer:
-
-- `area_id`: confirm all use lowercase stable ids
-- `area_name`:
-  - `shinagawa` row should become `Shinagawa`
-  - `oimachi` row should become `Oimachi`
-  - `odaiba` row should become `Odaiba`
-- `status`: confirm all are `draft`
-
-### 2. Save the cleaned summary layer
-
-Export or save the cleaned result as a stable layer for later reuse.
-
-Recommended name:
-
-- `phase1_areas_summary_counts_clean`
+1. open the repository and confirm the branch is `codex/map-ui-dify-integration`
+2. verify the React app still loads the summary CSV and the right chat rail
+3. copy `web/.env.example` and `web/.env.proxy.example` into local `.env` files
+4. create the Dify chat app using `docs/dify-setup-checklist.md`
+5. paste the prompt draft from `docs/dify-prompt-draft.md`
+6. set the app variable `tourism_context`
+7. point `VITE_DIFY_CHAT_ENDPOINT` to the local proxy
+8. enter the Dify API key only on the server side
 
 ## Recommended Task Sequence For Next Session
 
 Resume work in this order.
 
-### Task 1. Clean the summary layer
+### Task 1. Finish the Dify app
 
-- fix typos in area names
-- confirm row-to-polygon correspondence
-- remove obsolete temporary layers
+- publish the Chat App
+- add the `tourism_context` input variable
+- paste the grounded prompt
+- obtain the app API key
 
-### Task 2. Add area and density fields
+### Task 2. Connect the local proxy
 
-Create a metric-ready copy of the summary layer in a projected CRS and add:
+- create `.env` files from the examples
+- run `npm run dify:proxy`
+- point the frontend to the local proxy endpoint
 
-- `area_km2`
-- `cafe_density`
-- `restaurant_density`
-- `museum_density`
-- `hotel_density`
-- optionally `station_density`
+### Task 3. Verify the live answer path
 
-Recommended workflow:
+- send one question from the right rail
+- confirm the response comes back from Dify
+- check that the right rail still falls back cleanly when the proxy is absent
 
-- export summary polygons to a projected CRS
-- calculate `area_km2`
-- calculate per-km2 density fields using field calculator
+### Task 4. Optional future QGIS enrichment
 
-### Task 3. Export a CSV summary table
-
-Export the cleaned summary layer as CSV for downstream use.
-
-Recommended output:
-
-- `data/exports/phase1_areas_summary_counts.csv`
-
-### Task 4. Optionally enrich indicators
-
-If time allows, add:
-
-- `place_of_worship_count`
-- category ratios
-- nearest station distance
-- basic textual evidence or keywords
+- if the indicators need more nuance later, add extra evidence columns in QGIS
+- keep those additions separate from the Dify connection work
 
 ## Quick Restart Checklist
 
@@ -145,9 +135,9 @@ At the start of the next session:
 
 1. open `qgis/phase1-tourism-poc.qgz`
 2. confirm `phase1_areas_polygon` is present
-3. confirm the latest summary layer is present
-4. inspect the attribute table before running more tools
-5. clean naming and save a stable copy before new calculations
+3. confirm the latest summary CSV is present
+4. inspect the right rail copy before editing the Dify app
+5. keep the API key server-side only
 
 ## Notes On What Not To Repeat
 
@@ -160,8 +150,7 @@ At the start of the next session:
 
 If the next session goes well, the deliverables should be:
 
-- cleaned summary layer
-- projected metric version of the summary layer
-- area and density fields
-- exported CSV summary
-- a short Dify-ready schema draft based on the CSV
+- live Dify answer path from the right rail
+- published Dify app with the grounded prompt
+- server-side API key configuration
+- optional extra QGIS evidence fields if needed later
