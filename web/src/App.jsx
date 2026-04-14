@@ -572,9 +572,6 @@ function App() {
           <aside className="rounded-[32px] border border-white/75 bg-white/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-700">質問する</p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">エリアについて聞く</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              選んだエリアをもとに、気になる点をそのまま質問できます。
-            </p>
 
             <div className="mt-5 rounded-[22px] border border-slate-200 bg-white px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">選択中のエリア</p>
