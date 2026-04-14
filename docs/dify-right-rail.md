@@ -11,7 +11,7 @@ The map remains the main spatial UI. The right rail receives a structured contex
 - `VITE_DIFY_CHAT_ENDPOINT`
   - optional
   - if unset, the rail stays in local fallback mode
-  - recommended value: `/api/dify/chat`
+  - recommended value for local dev: `/api/dify/chat`
 - `VITE_DIFY_USER_ID`
   - optional
   - default: `qgis-tourism-poc`
@@ -51,6 +51,16 @@ The proxy expects:
 - `DIFY_APP_PATH` or the default `/v1/chat-messages`
 
 The proxy converts the structured `tourism_context` object into a JSON string before sending it to Dify, because the prompt should treat it as grounded text evidence.
+
+## Railway Deployment
+
+When the app is deployed to Railway, the browser should still talk to a single origin.
+
+That means:
+
+- the Dockerized Node process serves the frontend
+- the same process handles `POST /api/dify/chat`
+- the Dify API key stays on the server side only
 
 ## Expected Response Shape
 

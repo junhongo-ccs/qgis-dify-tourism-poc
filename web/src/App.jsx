@@ -403,14 +403,15 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const chatEndRef = useRef(null)
-  const difyEndpoint = import.meta.env.VITE_DIFY_CHAT_ENDPOINT?.trim() ?? ''
+  const difyEndpoint =
+    import.meta.env.VITE_DIFY_CHAT_ENDPOINT?.trim() ?? (import.meta.env.PROD ? '/api/dify/chat' : '')
   const difyUserId = import.meta.env.VITE_DIFY_USER_ID?.trim() || 'qgis-tourism-poc'
 
   useEffect(() => {
     let active = true
     async function loadAreas() {
       try {
-        const response = await fetch(new URL('exports/phase1_areas_summary_counts.csv', import.meta.env.BASE_URL))
+        const response = await fetch('/exports/phase1_areas_summary_counts.csv')
         if (!response.ok) throw new Error(`Failed to load data: ${response.status}`)
         const rows = parseCsv(await response.text())
         if (!active) return

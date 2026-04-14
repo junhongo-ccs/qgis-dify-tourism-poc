@@ -29,7 +29,7 @@ Work completed in the React / Dify-side PoC:
 - local chat fallback exists so the UI can be exercised before Dify is connected
 - a small Dify proxy contract was added for `POST /api/dify/chat`
 - a grounded prompt draft and setup checklist were added for the Dify app
-- GitHub Pages deployment is now the target for the frontend build
+- Railway deployment is now the target for the frontend build
 
 ## Latest Known Summary Fields
 
@@ -101,6 +101,7 @@ If the next session starts on a Mac, resume in this order:
 6. set the app variable `tourism_context`
 7. point `VITE_DIFY_CHAT_ENDPOINT` to the local proxy
 8. enter the Dify API key only on the server side
+9. when the app is ready to publish, connect the GitHub repo to Railway and deploy the Dockerfile build
 
 ## Recommended Task Sequence For Next Session
 

@@ -68,6 +68,8 @@ The proxy forwards to Dify:
 
 The proxy should keep the API key server-side only.
 
+For Railway, the same route should be served by the Dockerized Node process so the browser only talks to one origin.
+
 ## Environment Variables
 
 Frontend:

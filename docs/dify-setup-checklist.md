@@ -2,7 +2,7 @@
 
 See also:
 
-- `docs/github-pages-deploy.md`
+- `docs/railway-deploy.md`
 - `docs/dify-design-plan.md`
 
 ## App Type
@@ -50,7 +50,7 @@ After saving the app:
 3. keep the API key on the server side only
 4. point the local proxy to Dify with `web/.env.proxy.example`
 
-If the frontend will run on GitHub Pages, build it with a public proxy URL instead of the local proxy.
+If the app is deployed as a single Railway service, keep the frontend on the same origin and let the server-side proxy handle Dify requests.
 
 ## Local Dev Flow
 
@@ -59,6 +59,14 @@ If the frontend will run on GitHub Pages, build it with a public proxy URL inste
 3. create `.env` for the proxy from `web/.env.proxy.example`
 4. run `npm run dify:proxy`
 5. run `npm run dev`
+
+## Railway Deploy Flow
+
+1. connect the GitHub repo to Railway
+2. let Railway build from the repository `Dockerfile`
+3. set `DIFY_API_KEY` in Railway only
+4. set `DIFY_API_BASE_URL` if your Dify endpoint is not the default
+5. deploy the service and open the Railway URL
 
 ## Notes
 
