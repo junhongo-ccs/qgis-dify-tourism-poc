@@ -281,7 +281,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
     function updatePosition() {
       const point = map.latLngToContainerPoint(popupPosition)
       const cardWidth = 320
-      const cardHeight = 156
+      const cardHeight = 172
       const mapSize = map.getSize()
       const left = clamp(point.x - cardWidth / 2, 16, mapSize.x - cardWidth - 16)
       const top = clamp(point.y - cardHeight - 18, 16, mapSize.y - cardHeight - 16)
@@ -312,6 +312,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
         className="pointer-events-auto absolute w-[20rem] rounded-[28px] border border-white/10 bg-slate-950/96 p-4 text-white shadow-[0_24px_80px_rgba(15,23,42,0.45)] backdrop-blur"
         style={style}
       >
+        <div className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[10px] border-t-[20px] border-x-transparent border-t-slate-950 drop-shadow-[0_10px_22px_rgba(15,23,42,0.35)]" />
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-3xl font-semibold tracking-tight text-white">{popupArea.name}</p>
