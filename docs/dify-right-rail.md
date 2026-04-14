@@ -43,6 +43,7 @@ The proxy that sits behind `VITE_DIFY_CHAT_ENDPOINT` should forward this payload
 For local development, run a tiny proxy with:
 
 - `npm run dify:proxy` from `web/`
+- `nvm use` first, so `web/.nvmrc` selects `Node 24.13.1`
 
 The proxy expects:
 
@@ -80,3 +81,5 @@ In that mode it:
 - appends the user question to the transcript
 - generates a grounded local answer from the selected area summary
 - keeps the conversation flow visible before the real Dify backend exists
+
+This means the UI can still be reviewed locally even before Dify credentials are ready.

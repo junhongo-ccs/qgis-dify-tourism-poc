@@ -54,11 +54,20 @@ If the app is deployed as a single Railway service, keep the frontend on the sam
 
 ## Local Dev Flow
 
-1. `cd web`
-2. create `.env` from `web/.env.example`
-3. create `.env` for the proxy from `web/.env.proxy.example`
-4. run `npm run dify:proxy`
-5. run `npm run dev`
+Before starting:
+
+- use `Node 24.13.1` or newer
+- in this repo, `nvm use` will read `.nvmrc`
+- `Node 14` is too old for the current `package-lock.json` and Vite toolchain
+
+1. `git switch codex/map-ui-dify-integration`
+2. `cd web`
+3. run `nvm use`
+4. create `.env` from `web/.env.example`
+5. create `.env` for the proxy from `web/.env.proxy.example`
+6. run `npm ci`
+7. run `npm run dify:proxy`
+8. run `npm run dev`
 
 ## Railway Deploy Flow
 

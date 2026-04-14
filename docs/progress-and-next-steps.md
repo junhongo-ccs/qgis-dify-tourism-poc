@@ -94,14 +94,15 @@ Intermediate layers that can be deleted or recreated:
 If the next session starts on a Mac, resume in this order:
 
 1. open the repository and confirm the branch is `codex/map-ui-dify-integration`
-2. verify the React app still loads the summary CSV and the right chat rail
-3. copy `web/.env.example` and `web/.env.proxy.example` into local `.env` files
-4. create the Dify chat app using `docs/dify-setup-checklist.md`
-5. paste the prompt draft from `docs/dify-prompt-draft.md`
-6. set the app variable `tourism_context`
-7. point `VITE_DIFY_CHAT_ENDPOINT` to the local proxy
-8. enter the Dify API key only on the server side
-9. when the app is ready to publish, connect the GitHub repo to Railway and deploy the Dockerfile build
+2. run `nvm use` in the repo root and in `web/` so `Node 24.13.1` is selected
+3. verify the React app still loads the summary CSV and the right chat rail
+4. copy `web/.env.example` and `web/.env.proxy.example` into local `.env` files
+5. create the Dify chat app using `docs/dify-setup-checklist.md`
+6. paste the prompt draft from `docs/dify-prompt-draft.md`
+7. set the app variable `tourism_context`
+8. point `VITE_DIFY_CHAT_ENDPOINT` to the local proxy
+9. enter the Dify API key only on the server side
+10. when the app is ready to publish, connect the GitHub repo to Railway and deploy the Dockerfile build
 
 ## Recommended Task Sequence For Next Session
 
