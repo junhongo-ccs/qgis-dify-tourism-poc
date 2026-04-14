@@ -235,6 +235,27 @@ function isComposingEvent(event) {
 
 const panelHeightClass = 'h-[calc(100dvh-12rem)] min-h-[34rem]'
 
+function splitMessageContent(message) {
+  if (message.role !== 'assistant') {
+    return [{ id: message.id, content: message.content, role: message.role }]
+  }
+
+  const parts = message.content
+    .split(/\n\s*\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (parts.length <= 1) {
+    return [{ id: message.id, content: message.content, role: message.role }]
+  }
+
+  return parts.map((part, index) => ({
+    id: `${message.id}-${index}`,
+    content: part,
+    role: message.role,
+  }))
+}
+
 function MapDismiss({ onDismiss }) {
   useMapEvents({
     click: (event) => {
@@ -448,6 +469,11 @@ function App() {
 
   const selectedArea = selectedAreas.left
   const comparisonArea = selectedAreas.right
+  const renderedChatMessages = useMemo(
+    () => chatMessages.flatMap((message) => splitMessageContent(message)),
+    [chatMessages],
+  )
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [chatMessages, isSending])
@@ -593,7 +619,7 @@ function App() {
                 <p className="text-[11px] text-slate-400">{difyEndpoint ? 'Dify接続中' : '未接続'}</p>
               </div>
               <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-                {chatMessages.map((message) => (
+                {renderedChatMessages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
