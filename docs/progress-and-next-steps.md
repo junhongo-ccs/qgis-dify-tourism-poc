@@ -29,6 +29,7 @@ Work completed in the React / Dify-side PoC:
 - local chat fallback exists so the UI can be exercised before Dify is connected
 - a small Dify proxy contract was added for `POST /api/dify/chat`
 - a grounded prompt draft and setup checklist were added for the Dify app
+- GitHub Pages deployment is now the target for the frontend build
 
 ## Latest Known Summary Fields
 

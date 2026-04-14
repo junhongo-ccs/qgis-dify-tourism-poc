@@ -410,7 +410,7 @@ function App() {
     let active = true
     async function loadAreas() {
       try {
-        const response = await fetch('/exports/phase1_areas_summary_counts.csv')
+        const response = await fetch(new URL('exports/phase1_areas_summary_counts.csv', import.meta.env.BASE_URL))
         if (!response.ok) throw new Error(`Failed to load data: ${response.status}`)
         const rows = parseCsv(await response.text())
         if (!active) return

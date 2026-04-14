@@ -23,6 +23,7 @@ These artifacts reduce setup work in the next session:
 - QGIS can use a concrete lookup table instead of rebuilding the mapping from prose
 - the summary layer now has a clear target column set
 - Dify integration has a stable JSON contract ready before the final CSV export exists
+- the frontend now has a GitHub Pages deployment path and a matching base-path build
 
 ## Remaining Manual QGIS Work
 

@@ -2,6 +2,7 @@
 
 See also:
 
+- `docs/github-pages-deploy.md`
 - `docs/dify-design-plan.md`
 
 ## App Type
@@ -48,6 +49,8 @@ After saving the app:
 2. copy the app API key
 3. keep the API key on the server side only
 4. point the local proxy to Dify with `web/.env.proxy.example`
+
+If the frontend will run on GitHub Pages, build it with a public proxy URL instead of the local proxy.
 
 ## Local Dev Flow
 
