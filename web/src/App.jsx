@@ -674,7 +674,8 @@ function App() {
                   }}
                   rows={2}
                   placeholder="入力例：このエリアはどんな観光体験に向いていますか？"
-                  className="w-full resize-none rounded-2xl border border-cyan-300/25 bg-slate-900 px-4 py-3 text-[0.88rem] leading-[1.4] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-[0.8rem] placeholder:leading-[1.4] placeholder:text-slate-400 focus:border-cyan-300 focus:bg-slate-900"
+                  style={{ fontSize: '0.82rem', lineHeight: '1.35' }}
+                  className="w-full resize-none rounded-2xl border border-cyan-300/25 bg-slate-900 px-4 py-3 text-[0.82rem] leading-[1.35] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-[0.82rem] placeholder:leading-[1.35] placeholder:text-slate-400 focus:border-cyan-300 focus:bg-slate-900"
                 />
               </form>
 
