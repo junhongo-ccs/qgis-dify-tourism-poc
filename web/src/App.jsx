@@ -340,7 +340,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
         <div className="pr-5">
           <div>
             <p className={areaNameClass}>{popupArea.name}</p>
-            <p className="mt-1 hidden text-sm text-slate-300 xl:block">{popupArea.tone}</p>
+            <p className="mt-1 hidden text-sm text-slate-300 2xl:block">{popupArea.tone}</p>
           </div>
         </div>
         <div className="mt-3 grid grid-cols-5 gap-1.5 text-center text-xs">
@@ -437,6 +437,7 @@ function App() {
 
   useEffect(() => {
     let active = true
+    document.title = 'QGIS × Dify | 観光GIS PoC'
     async function loadAreas() {
       try {
         const response = await fetch('/exports/phase1_areas_summary_counts.csv')
@@ -562,7 +563,7 @@ function App() {
       <div className="mx-auto flex h-full max-w-[1600px] flex-col overflow-hidden px-4 py-3 sm:px-5 lg:px-6 xl:px-8">
         <main className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(330px,360px)] xl:grid-cols-[minmax(0,1fr)_minmax(340px,380px)]">
           <section className="flex min-h-0 h-full flex-col gap-3">
-            <header className="hidden shrink-0 rounded-[22px] border border-white/70 bg-white/60 px-4 py-3 shadow-[0_16px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm xl:block sm:px-5 sm:py-4">
+            <header className="hidden shrink-0 rounded-[22px] border border-white/70 bg-white/60 px-4 py-3 shadow-[0_16px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm 2xl:block sm:px-5 sm:py-4">
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap items-center gap-2 text-[10px] font-medium tracking-[0.16em] text-slate-500">
                   <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5">QGIS</span>
@@ -613,7 +614,7 @@ function App() {
               <h2 className="text-[0.88rem] font-semibold tracking-tight text-white sm:text-[0.98rem]">エリアについて聞く</h2>
 
               <div className="mt-3 rounded-[20px] border border-white/10 bg-white/7 px-4 py-2 sm:mt-4 sm:py-3">
-                <p className="hidden text-[10px] uppercase tracking-[0.22em] text-slate-400 xl:block">選択中のエリア</p>
+                <p className="hidden text-[10px] uppercase tracking-[0.22em] text-slate-400 2xl:block">選択中のエリア</p>
                 <p className="mt-1 text-[0.92rem] font-semibold tracking-tight text-white sm:mt-1.5 sm:text-[1.05rem]">
                   {selectedArea?.name ?? 'エリアを選択してください'}
                 </p>
