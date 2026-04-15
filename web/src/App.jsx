@@ -446,9 +446,13 @@ function App() {
   const [activeAreaId, setActiveAreaId] = useState('shinagawa')
   const [popupAreaId, setPopupAreaId] = useState('shinagawa')
   const [chatMessages, setChatMessages] = useState(() => [
-    createChatMessage('assistant', 'エリアを選んで質問すると、ここで会話できます。まずは気になる観点を投げてください。', {
-      source: 'welcome',
-    }),
+    createChatMessage(
+      'assistant',
+      'エリアを選ぶと、GISで見た施設分布や集積傾向をもとに特徴を整理できます。まずはこのエリアの特徴や違いを聞いてみてください。',
+      {
+        source: 'welcome',
+      },
+    ),
   ])
   const [chatInput, setChatInput] = useState('')
   const [chatError, setChatError] = useState('')
@@ -672,7 +676,7 @@ function App() {
                 {isSending ? (
                   <div className="flex justify-start">
                     <div className="rounded-[24px] border border-white/10 bg-white/7 px-4 py-3 text-[10px] leading-5 text-slate-300">
-                      送信中...
+                      Geminiに送信中...
                     </div>
                   </div>
                 ) : null}
