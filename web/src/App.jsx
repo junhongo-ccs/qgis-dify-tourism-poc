@@ -586,7 +586,7 @@ function App() {
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-700">地図</p>
                     <h2 className="mt-1 text-[0.88rem] font-semibold text-slate-950 sm:text-[0.98rem]">1.観光エリアを選ぶ</h2>
-                  <p className="mt-1.5 max-w-xl text-[0.86rem] leading-[1.3] text-slate-600 sm:text-[0.9rem]">品川・大井町・芝公園・お台場の観光基本データをもとに、AIと会話できます。</p>
+                    <p className="mt-1.5 max-w-xl text-[0.86rem] leading-[1.3] text-slate-700 sm:text-[0.9rem]">品川・大井町・芝公園・お台場の観光基本データをもとに、AIと会話できます。</p>
                 </div>
                 <div className="hidden rounded-full border border-cyan-400/40 bg-cyan-50 px-2.5 py-1 text-[10px] font-medium text-cyan-700 sm:block sm:shrink-0">地図は動かせます</div>
               </div>
@@ -613,12 +613,12 @@ function App() {
             <div className="shrink-0">
                 <h2 className="text-[0.88rem] font-semibold tracking-tight text-white sm:text-[0.98rem]">2.エリアについて聞く</h2>
 
-              <div className="mt-3 rounded-[20px] border border-white/10 bg-white/7 px-4 py-2 sm:mt-4 sm:py-3">
-                <p className="hidden text-[10px] uppercase tracking-[0.22em] text-slate-400 2xl:block">選択中のエリア</p>
-                <p className="mt-1 text-[0.92rem] font-semibold tracking-tight text-white sm:mt-1.5 sm:text-[1.05rem]">
-                  {selectedArea?.name ?? 'エリアを選択してください'}
-                </p>
-              </div>
+                <div className="mt-3 rounded-[20px] border border-white/10 bg-white/7 px-4 py-1.5 sm:mt-4 sm:py-2">
+                  <p className="hidden text-[10px] uppercase tracking-[0.22em] text-slate-400 2xl:block">選択中のエリア</p>
+                  <p className="mt-0.5 text-[0.92rem] font-semibold tracking-tight text-white sm:mt-1 sm:text-[1.05rem]">
+                    {selectedArea?.name ?? 'エリアを選択してください'}
+                  </p>
+                </div>
             </div>
 
             <div className="mt-3 flex min-h-0 flex-1 flex-col">
