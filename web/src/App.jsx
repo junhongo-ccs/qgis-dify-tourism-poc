@@ -12,12 +12,6 @@ const metricDefinitions = [
   { key: 'station', label: '駅', countField: 'station_count', densityField: 'station_density' },
 ]
 
-const metricCards = [
-  { label: '対象エリア', detail: '品川・大井町・芝公園・お台場' },
-  { label: '見ている項目', detail: 'カフェ、レストラン、ミュージアム、ホテル、駅' },
-  { label: '確認の仕方', detail: '地図と会話で見比べる' },
-]
-
 const areaMeta = {
   shinagawa: {
     accent: 'from-cyan-400 to-sky-600',
@@ -272,6 +266,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
   const map = useMap()
   const [style, setStyle] = useState(null)
   const cardRef = useRef(null)
+  const areaNameClass = 'text-[0.95rem] font-semibold tracking-tight text-white sm:text-[1.05rem]'
 
   useEffect(() => {
     if (!popupArea || !popupPosition) {
@@ -281,12 +276,12 @@ function PopupOverlay({ popupArea, popupPosition }) {
 
     function updatePosition() {
       const point = map.latLngToContainerPoint(popupPosition)
-      const cardWidth = 320
-      const pointerHeight = 20
-      const cardBodyHeight = cardRef.current?.offsetHeight ?? 156
+      const pointerHeight = 16
+      const cardWidth = cardRef.current?.offsetWidth ?? 288
+      const cardBodyHeight = cardRef.current?.offsetHeight ?? 136
       const overlayHeight = cardBodyHeight + pointerHeight
       const mapSize = map.getSize()
-      const left = clamp(point.x - cardWidth / 2, 16, mapSize.x - cardWidth - 16)
+      const left = clamp(point.x, 16 + cardWidth / 2, mapSize.x - 16 - cardWidth / 2)
       const top = clamp(point.y - overlayHeight, 16, mapSize.y - overlayHeight - 16)
 
       setStyle({
@@ -313,19 +308,30 @@ function PopupOverlay({ popupArea, popupPosition }) {
     >
       <div
         ref={cardRef}
-        className="pointer-events-auto absolute w-[20rem] rounded-[28px] border border-white/10 bg-slate-950/96 p-4 text-white shadow-[0_24px_80px_rgba(15,23,42,0.45)] backdrop-blur"
+        className="pointer-events-auto absolute w-[18rem] -translate-x-1/2 rounded-[22px] border border-white/10 bg-slate-950/96 p-3 text-white shadow-[0_24px_80px_rgba(15,23,42,0.45)] backdrop-blur"
         style={style}
       >
-        <div className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[10px] border-t-[20px] border-x-transparent border-t-slate-950 drop-shadow-[0_10px_22px_rgba(15,23,42,0.35)]" />
-        <div className="flex items-start justify-between gap-3">
+        <button
+          type="button"
+          aria-label="ポップアップを閉じる"
+          onClick={(event) => {
+            event.stopPropagation()
+            onDismissPopup()
+          }}
+          className="absolute right-2 top-2 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-white/8 text-[10px] leading-none text-slate-200 transition hover:bg-white/14 hover:text-white"
+        >
+          ×
+        </button>
+        <div className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[8px] border-t-[16px] border-x-transparent border-t-slate-950 drop-shadow-[0_10px_22px_rgba(15,23,42,0.35)]" />
+        <div className="pr-5">
           <div>
-            <p className="text-3xl font-semibold tracking-tight text-white">{popupArea.name}</p>
-            <p className="mt-1 text-base text-slate-300">{popupArea.tone}</p>
+            <p className={areaNameClass}>{popupArea.name}</p>
+            <p className="mt-1 hidden text-sm text-slate-300 xl:block">{popupArea.tone}</p>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-5 gap-2 text-center text-xs">
+        <div className="mt-3 grid grid-cols-5 gap-1.5 text-center text-xs">
           {Object.entries(popupArea.counts).map(([key, value]) => (
-            <div key={key} className="rounded-2xl bg-white/6 px-2 py-2">
+            <div key={key} className="rounded-xl bg-white/6 px-1.5 py-1.5">
               <div
                 className="flex items-center justify-center text-slate-300"
                 title={metricDefinitions.find((metric) => metric.key === key)?.label ?? key}
@@ -333,11 +339,11 @@ function PopupOverlay({ popupArea, popupPosition }) {
               >
                 {metricIcons[key] ?? <span className="uppercase tracking-[0.18em] text-slate-400">{key}</span>}
               </div>
-              <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+              <p className="mt-1 text-xs font-semibold text-white">{value}</p>
             </div>
           ))}
         </div>
-        <p className="mt-4 text-sm leading-6 text-slate-300">{createPopupFact(popupArea)}</p>
+        <p className="mt-3 text-xs leading-5 text-slate-300">{createPopupFact(popupArea)}</p>
       </div>
     </div>
   )
@@ -539,35 +545,35 @@ function App() {
 
   return (
     <div className="h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.18),_transparent_30%),linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] text-slate-900">
-      <div className="mx-auto flex h-full max-w-[1600px] flex-col overflow-hidden px-6 py-4 sm:px-8 lg:px-10 xl:px-12">
-        <header className="mb-4 shrink-0 rounded-[28px] border border-white/70 bg-white/65 px-4 py-4 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:px-5 sm:py-4 lg:px-6 lg:py-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-[2.1rem] xl:text-[2.25rem]">地図を見て、エリアの違いをつかむ。</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">地図のポリゴンを選ぶと、右側で質問しながら見比べられます。</p>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[34rem]">
-              {metricCards.map((card) => (
-                <article key={card.label} className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-4 text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-                  <p className="text-xs uppercase tracking-[0.22em] text-slate-500">{card.label}</p>
-                  <p className="mt-2 text-sm leading-[1.3] text-slate-700">{card.detail}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </header>
-
-        <main className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="grid min-h-0 h-full">
-            <div className="relative flex h-full min-h-0 flex-col overflow-hidden p-0">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,_rgba(56,189,248,0.10),_transparent_28%),radial-gradient(circle_at_80%_15%,_rgba(250,204,21,0.10),_transparent_20%)]" />
-              <div className="relative z-10 shrink-0 flex items-start justify-between gap-4 pl-2 pr-2 pt-2 sm:pl-4 sm:pr-4 sm:pt-4">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">地図</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-slate-950">観光エリア</h2>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">地図上のエリアを選ぶと、カードで要点が見られます。</p>
+      <div className="mx-auto flex h-full max-w-[1600px] flex-col overflow-hidden px-4 py-3 sm:px-5 lg:px-6 xl:px-8">
+        <main className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(330px,360px)] xl:grid-cols-[minmax(0,1fr)_minmax(340px,380px)]">
+          <section className="flex min-h-0 h-full flex-col gap-3">
+            <header className="hidden shrink-0 rounded-[22px] border border-white/70 bg-white/60 px-4 py-3 shadow-[0_16px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm xl:block sm:px-5 sm:py-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2 text-[10px] font-medium tracking-[0.16em] text-slate-500">
+                  <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5">QGIS</span>
+                  <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5">空間集計CSV</span>
+                  <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5">React</span>
+                  <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5">Vite</span>
+                  <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5">Leaflet</span>
+                  <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5">Dify</span>
+                  <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5">Tailwind CSS</span>
                 </div>
-                <div className="hidden rounded-full border border-cyan-400/40 bg-cyan-50 px-4 py-2 text-xs font-medium text-cyan-700 sm:block sm:shrink-0">地図は動かせます</div>
+                <div className="max-w-4xl">
+                  <h1 className="text-[1.45rem] font-semibold tracking-tight text-slate-950 sm:text-[1.75rem] lg:text-[1.95rem] xl:text-[2.05rem]">会話する「観光空間データ」。</h1>
+                </div>
+              </div>
+            </header>
+
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,_rgba(56,189,248,0.10),_transparent_28%),radial-gradient(circle_at_80%_15%,_rgba(250,204,21,0.10),_transparent_20%)]" />
+              <div className="relative z-10 shrink-0 flex items-start justify-between gap-3 pl-2 pr-2 pt-2 sm:pl-4 sm:pr-4 sm:pt-4">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-700">地図</p>
+                  <h2 className="mt-1 text-[1.15rem] font-semibold text-slate-950 sm:text-[1.25rem]">観光エリア</h2>
+                  <p className="mt-1.5 max-w-xl text-[0.86rem] leading-[1.3] text-slate-600 sm:text-[0.9rem]">品川・大井町・芝公園・お台場の観光基本データをもとに、AIと会話できます。</p>
+                </div>
+                <div className="hidden rounded-full border border-cyan-400/40 bg-cyan-50 px-2.5 py-1 text-[10px] font-medium text-cyan-700 sm:block sm:shrink-0">地図は動かせます</div>
               </div>
 
               <div className="relative z-10 mt-4 min-h-0 flex-1">
@@ -588,31 +594,31 @@ function App() {
             </div>
           </section>
 
-          <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/75 bg-white/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
+          <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-white/75 bg-slate-950/96 p-4 text-white shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-5">
             <div className="shrink-0">
-              <h2 className="text-2xl font-semibold text-slate-950">エリアについて聞く</h2>
+              <h2 className="text-[0.88rem] font-semibold tracking-tight text-white sm:text-[0.98rem]">エリアについて聞く</h2>
 
-              <div className="mt-5 rounded-[22px] border border-slate-200 bg-white px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">選択中のエリア</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+              <div className="mt-3 rounded-[20px] border border-white/10 bg-white/7 px-4 py-2 sm:mt-4 sm:py-3">
+                <p className="hidden text-[10px] uppercase tracking-[0.22em] text-slate-400 xl:block">選択中のエリア</p>
+                <p className="mt-1 text-[0.92rem] font-semibold tracking-tight text-white sm:mt-1.5 sm:text-[1.05rem]">
                   {selectedArea?.name ?? 'エリアを選択してください'}
                 </p>
               </div>
             </div>
 
-            <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-[32px] bg-slate-950 p-4 text-white">
-              <div className="flex shrink-0 items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-400">やり取り</p>
-                <p className="text-[11px] text-slate-400">{difyEndpoint ? 'Dify接続中' : '未接続'}</p>
+            <div className="mt-3 flex min-h-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 pb-2.5">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-slate-400">やり取り</p>
+                <p className="text-[10px] text-slate-400">{difyEndpoint ? 'Dify接続中' : '未接続'}</p>
               </div>
-              <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+              <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
                 {renderedChatMessages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[88%] rounded-[24px] px-4 py-3 text-sm leading-6 ${
+                      className={`max-w-[88%] rounded-[22px] px-3.5 py-2.5 text-[0.86rem] leading-[1.4] ${
                         message.role === 'user'
                           ? 'bg-cyan-500 text-slate-950'
                           : 'border border-white/10 bg-white/7 text-slate-100'
@@ -624,7 +630,7 @@ function App() {
                 ))}
                 {isSending ? (
                   <div className="flex justify-start">
-                    <div className="rounded-[24px] border border-white/10 bg-white/7 px-4 py-3 text-sm leading-6 text-slate-300">
+                    <div className="rounded-[24px] border border-white/10 bg-white/7 px-4 py-3 text-[0.86rem] leading-[1.4] text-slate-300">
                       送信中...
                     </div>
                   </div>
@@ -633,12 +639,15 @@ function App() {
               </div>
 
               <form
-                className="mt-4 shrink-0 rounded-[28px] border border-white/10 bg-white/5 p-3"
+                className="mt-3 shrink-0 border-t border-white/10 pt-3"
                 onSubmit={(event) => {
                   event.preventDefault()
                   sendChatMessage(chatInput)
                 }}
               >
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="text-[10px] leading-5 text-cyan-100/70">Enter で送信 / Shift+Enter で改行</p>
+                </div>
                 <textarea
                   id="chat-input"
                   value={chatInput}
@@ -650,15 +659,12 @@ function App() {
                   }}
                   rows={2}
                   placeholder="入力例：このエリアはどんな観光体験に向いていますか？"
-                  className="w-full resize-none rounded-2xl border border-cyan-300/25 bg-slate-900 px-4 py-3 text-base leading-7 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-sm placeholder:leading-6 placeholder:text-slate-400 focus:border-cyan-300 focus:bg-slate-900"
+                  className="w-full resize-none rounded-2xl border border-cyan-300/25 bg-slate-900 px-4 py-3 text-[0.88rem] leading-[1.4] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-[0.8rem] placeholder:leading-[1.4] placeholder:text-slate-400 focus:border-cyan-300 focus:bg-slate-900"
                 />
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs leading-5 text-cyan-100/70">Enter で送信 / Shift+Enter で改行</p>
-                </div>
               </form>
 
               {chatError ? (
-                <p className="mt-3 shrink-0 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm leading-6 text-rose-100">
+                <p className="mt-3 shrink-0 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-[0.86rem] leading-6 text-rose-100">
                   {chatError}
                 </p>
               ) : null}
