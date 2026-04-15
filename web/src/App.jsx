@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import L from 'leaflet'
 import { GeoJSON, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { phase1AreaGeojson } from './areaGeojson'
@@ -248,6 +249,21 @@ function MapDismiss({ onDismiss }) {
   return null
 }
 
+function BottomRightZoomControl() {
+  const map = useMap()
+
+  useEffect(() => {
+    const control = L.control.zoom({ position: 'bottomright' })
+    control.addTo(map)
+
+    return () => {
+      control.remove()
+    }
+  }, [map])
+
+  return null
+}
+
 function MapFitBounds() {
   const map = useMap()
 
@@ -378,11 +394,12 @@ function TourismMap({ areas, activeAreaId, popupAreaId, onSelectArea, onDismissP
       zoom={13}
       minZoom={11}
       maxZoom={17}
-      zoomControl={true}
+      zoomControl={false}
       className="h-full w-full rounded-[24px]"
       scrollWheelZoom={true}
     >
       <MapFitBounds />
+      <BottomRightZoomControl />
       <MapDismiss onDismiss={onDismissPopup} />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
