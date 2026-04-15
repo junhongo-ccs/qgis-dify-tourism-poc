@@ -265,6 +265,7 @@ function MapFitBounds() {
 function PopupOverlay({ popupArea, popupPosition }) {
   const map = useMap()
   const [style, setStyle] = useState(null)
+  const [placement, setPlacement] = useState('top')
   const cardRef = useRef(null)
   const areaNameClass = 'text-[0.95rem] font-semibold tracking-tight text-white sm:text-[1.05rem]'
 
@@ -281,13 +282,20 @@ function PopupOverlay({ popupArea, popupPosition }) {
       const cardBodyHeight = cardRef.current?.offsetHeight ?? 136
       const overlayHeight = cardBodyHeight + pointerHeight
       const mapSize = map.getSize()
+      const spaceAbove = point.y - 16
+      const spaceBelow = mapSize.y - point.y - 16
+      const nextPlacement = spaceAbove >= overlayHeight || spaceAbove >= spaceBelow ? 'top' : 'bottom'
       const left = clamp(point.x, 16 + cardWidth / 2, mapSize.x - 16 - cardWidth / 2)
-      const top = clamp(point.y - overlayHeight, 16, mapSize.y - overlayHeight - 16)
+      const top =
+        nextPlacement === 'top'
+          ? clamp(point.y - overlayHeight, 16, mapSize.y - overlayHeight - 16)
+          : clamp(point.y + pointerHeight, 16, mapSize.y - overlayHeight - 16)
 
       setStyle({
         left: `${left}px`,
         top: `${top}px`,
       })
+      setPlacement(nextPlacement)
     }
 
     updatePosition()
@@ -308,7 +316,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
     >
       <div
         ref={cardRef}
-        className="pointer-events-auto absolute w-[18rem] -translate-x-1/2 rounded-[22px] border border-white/10 bg-slate-950/96 p-3 text-white shadow-[0_24px_80px_rgba(15,23,42,0.45)] backdrop-blur"
+        className="pointer-events-auto absolute w-[18rem] -translate-x-1/2 rounded-[22px] border border-white/10 bg-slate-900/94 p-3 text-white shadow-[0_24px_80px_rgba(15,23,42,0.40)] backdrop-blur"
         style={style}
       >
         <button
@@ -322,7 +330,13 @@ function PopupOverlay({ popupArea, popupPosition }) {
         >
           ×
         </button>
-        <div className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[8px] border-t-[16px] border-x-transparent border-t-slate-950 drop-shadow-[0_10px_22px_rgba(15,23,42,0.35)]" />
+        <div
+          className={`absolute left-1/2 h-0 w-0 -translate-x-1/2 drop-shadow-[0_10px_22px_rgba(15,23,42,0.35)] ${
+            placement === 'top'
+              ? 'top-full border-x-[8px] border-t-[16px] border-x-transparent border-t-slate-900'
+              : 'bottom-full border-x-[8px] border-b-[16px] border-x-transparent border-b-slate-900'
+          }`}
+        />
         <div className="pr-5">
           <div>
             <p className={areaNameClass}>{popupArea.name}</p>
@@ -594,7 +608,7 @@ function App() {
             </div>
           </section>
 
-          <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-white/75 bg-slate-950/96 p-4 text-white shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-5">
+          <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-white/75 bg-slate-900/94 p-4 text-white shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-5">
             <div className="shrink-0">
               <h2 className="text-[0.88rem] font-semibold tracking-tight text-white sm:text-[0.98rem]">エリアについて聞く</h2>
 
