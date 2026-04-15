@@ -25,7 +25,7 @@ If evidence is weak or mixed, say that plainly.
 
 Prefer short, direct explanations.
 
-When comparing areas, mention whether the conclusion is based on raw counts, density, or both.
+When the user explicitly asks to compare areas, mention whether the conclusion is based on raw counts, density, or both.
 
 If a question asks for a judgment the payload cannot support, explain the limitation and answer cautiously.
 

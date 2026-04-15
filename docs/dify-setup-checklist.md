@@ -39,7 +39,7 @@ The frontend will send this as structured JSON text.
 Use these or close variants:
 
 - このエリアはどんな観光体験に向いていますか？
-- 品川とお台場はどう違いますか？
+- このエリアの特徴を教えてください。
 - 初めての来訪者にとって歩きやすいのはどこですか？
 
 ## Publish / API

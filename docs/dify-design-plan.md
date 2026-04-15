@@ -29,7 +29,7 @@ It should include:
 
 - schema version
 - selected area id and name
-- comparison area when needed
+- comparison area only when the user explicitly asks to compare
 - counts
 - density values
 - a short note
