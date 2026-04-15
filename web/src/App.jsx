@@ -284,6 +284,10 @@ function PopupOverlay({ popupArea, popupPosition }) {
   const [placement, setPlacement] = useState('top')
   const cardRef = useRef(null)
   const areaNameClass = 'text-[0.95rem] font-semibold tracking-tight text-white sm:text-[1.05rem]'
+  const visibleMetrics = useMemo(
+    () => Object.entries(popupArea?.counts ?? {}).filter(([, value]) => value > 0),
+    [popupArea],
+  )
 
   useEffect(() => {
     if (!popupArea || !popupPosition) {
@@ -359,11 +363,16 @@ function PopupOverlay({ popupArea, popupPosition }) {
             <p className="mt-1 hidden text-sm text-slate-300 2xl:block">{popupArea.tone}</p>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-5 gap-1.5 text-center text-xs">
-          {Object.entries(popupArea.counts).map(([key, value]) => (
-            <div key={key} className="rounded-xl bg-white/6 px-1.5 py-1.5">
-              <div
-                className="flex items-center justify-center text-slate-300"
+          <div
+            className="mt-3 grid gap-1.5 text-center text-xs"
+            style={{
+              gridTemplateColumns: `repeat(${Math.max(visibleMetrics.length, 1)}, minmax(0, 1fr))`,
+            }}
+          >
+            {visibleMetrics.map(([key, value]) => (
+              <div key={key} className="rounded-xl bg-white/6 px-1.5 py-1.5">
+                <div
+                  className="flex items-center justify-center text-slate-300"
                 title={metricDefinitions.find((metric) => metric.key === key)?.label ?? key}
                 aria-label={metricDefinitions.find((metric) => metric.key === key)?.label ?? key}
               >
