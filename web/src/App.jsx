@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import { GeoJSON, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import aiSparkleIcon from './icons/ai-sparkle.svg'
+import sendPlaneIcon from './icons/send-plane.svg'
 import { phase1AreaGeojson } from './areaGeojson'
 import { buildTourismContext, createLocalAssistantReply, postChatMessage } from './difyChat'
 
@@ -117,6 +119,7 @@ function parseNumber(value) {
 
 function createAreaNote(areaName, strongestMetric) {
   if (!strongestMetric) return `${areaName} は、QGIS から追加の指標を出力すると、より具体的に説明できます。`
+
   if (strongestMetric.key === 'station') return `${strongestMetric.label}の指標が最も強く、エリア内を移動しやすい可能性があります。`
   if (strongestMetric.key === 'museum') return `${strongestMetric.label}の件数が相対的に強く、文化寄りの解釈を支えます。`
   return `${strongestMetric.label}の件数が、このエリアでいちばん強いシグナルになっています。`
@@ -125,6 +128,17 @@ function createAreaNote(areaName, strongestMetric) {
 function createPopupFact(area) {
   if (!area) return ''
   return `カフェ ${area.counts.cafe}件、レストラン ${area.counts.restaurant}件、ミュージアム ${area.counts.museum}件、ホテル ${area.counts.hotel}件、駅 ${area.counts.station}件`
+}
+
+function createMobilePopupFactList(area) {
+  if (!area) return []
+
+  return metricDefinitions.map((metric) => ({
+    key: metric.key,
+    label: metric.label,
+    value: area.counts[metric.key] ?? 0,
+    icon: metricIcons[metric.key],
+  }))
 }
 
 function toAreaRecord(row) {
@@ -388,7 +402,7 @@ function PopupOverlay({ popupArea, popupPosition }) {
   )
 }
 
-function TourismMap({ areas, activeAreaId, popupAreaId, onSelectArea, onDismissPopup }) {
+function TourismMap({ areas, activeAreaId, popupAreaId, onSelectArea, onDismissPopup, showPopupOverlay = true, showZoomControl = true }) {
   const areasById = useMemo(() => Object.fromEntries(areas.map((area) => [area.id, area])), [areas])
   const popupFeature = useMemo(
     () => phase1AreaGeojson.features.find((feature) => feature.properties.area_id === popupAreaId) ?? null,
@@ -408,7 +422,7 @@ function TourismMap({ areas, activeAreaId, popupAreaId, onSelectArea, onDismissP
       scrollWheelZoom={true}
     >
       <MapFitBounds />
-      <BottomRightZoomControl />
+      {showZoomControl ? <BottomRightZoomControl /> : null}
       <MapDismiss onDismiss={onDismissPopup} />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -436,7 +450,7 @@ function TourismMap({ areas, activeAreaId, popupAreaId, onSelectArea, onDismissP
           })
         }}
       />
-      <PopupOverlay popupArea={popupArea} popupPosition={popupPosition} />
+      {showPopupOverlay ? <PopupOverlay popupArea={popupArea} popupPosition={popupPosition} /> : null}
     </MapContainer>
   )
 }
@@ -445,6 +459,8 @@ function App() {
   const [areas, setAreas] = useState([])
   const [activeAreaId, setActiveAreaId] = useState('shinagawa')
   const [popupAreaId, setPopupAreaId] = useState('shinagawa')
+  const [mobileScreen, setMobileScreen] = useState('map')
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState(() => [
     createChatMessage('assistant', 'エリアを選んで質問すると、ここで会話できます。まずは気になる観点を投げてください。', {
       source: 'welcome',
@@ -492,6 +508,7 @@ function App() {
   function handleSelectArea(areaId) {
     setActiveAreaId(areaId)
     setPopupAreaId(areaId)
+    setMobileDetailOpen(true)
   }
 
   const selectedAreas = useMemo(() => {
@@ -585,7 +602,226 @@ function App() {
   }
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.18),_transparent_30%),linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] text-slate-900">
+    <>
+      <div className="lg:hidden h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.18),_transparent_30%),linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] text-slate-900">
+        <div className="mx-auto flex h-full max-w-[960px] flex-col overflow-hidden px-3 py-3">
+          {mobileScreen === 'map' ? (
+            <div className="relative flex h-full min-h-0 flex-col">
+              <header className="shrink-0 rounded-[22px] border border-white/70 bg-white/75 px-4 py-3 shadow-[0_16px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-700">地図</p>
+                <h1 className="mt-1 text-[1.05rem] font-semibold tracking-tight text-slate-950">1.観光エリアを選ぶ</h1>
+                <p className="mt-1.5 text-[0.84rem] leading-5 text-slate-700">
+                  品川・大井町・芝公園・お台場の観光基本データをもとに、AIと会話できます。
+                </p>
+              </header>
+
+              <div className="relative mt-3 min-h-0 flex-1 overflow-hidden rounded-[28px] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.10)]">
+                {!loading && !error ? (
+                  <TourismMap
+                    areas={areas}
+                    activeAreaId={activeAreaId}
+                    popupAreaId={popupAreaId}
+                    onSelectArea={handleSelectArea}
+                    onDismissPopup={() => {
+                      setPopupAreaId('')
+                      setMobileDetailOpen(false)
+                    }}
+                    showPopupOverlay={false}
+                    showZoomControl={false}
+                  />
+                ) : null}
+                {loading ? (
+                  <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-cyan-300/20 bg-slate-900/85 px-4 py-3 text-sm text-cyan-100">
+                    エリア情報を読み込み中...
+                  </div>
+                ) : null}
+                {error ? (
+                  <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-rose-300/30 bg-rose-950/85 px-4 py-3 text-sm text-rose-100">
+                    {error}
+                  </div>
+                ) : null}
+
+                {mobileDetailOpen ? (
+                  <div
+                    className="absolute inset-0 z-[600] flex items-end bg-slate-950/28 backdrop-blur-[2px]"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="モーダルを閉じる"
+                    onClick={() => {
+                      setMobileDetailOpen(false)
+                      setPopupAreaId('')
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        setMobileDetailOpen(false)
+                        setPopupAreaId('')
+                      }
+                    }}
+                  >
+                    <div
+                      className="max-h-[calc(100dvh-24px)] w-full overflow-y-auto border-t border-slate-200 bg-white px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_48px_rgba(15,23,42,0.14)]"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-cyan-700">2.エリアについて聞く</p>
+                          <p className="mt-1 text-[1rem] font-semibold tracking-tight text-slate-950">
+                            {selectedArea?.name ?? 'エリアを選択してください'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-medium text-slate-500">
+                            {difyEndpoint ? 'Dify接続中' : '未接続'}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="モーダルを閉じる"
+                            onClick={() => {
+                              setMobileDetailOpen(false)
+                              setPopupAreaId('')
+                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-[0.9rem] leading-6 text-slate-700">
+                        {selectedArea?.note ?? 'まずは地図上のエリアを選んでください。'}
+                      </p>
+                      <div className="mt-3 border-t border-slate-200 pt-3">
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[0.75rem] leading-4 text-slate-700">
+                          {createMobilePopupFactList(selectedArea).map((item) => (
+                            <div key={item.key} className="flex items-center gap-2 text-slate-950">
+                              <span className="shrink-0 text-slate-950">{item.icon}</span>
+                              <span className="min-w-0 flex-1 text-slate-700">{item.label}</span>
+                              <span className="shrink-0 font-medium text-slate-950">{item.value}件</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-slate-200 bg-gradient-to-t from-white via-white to-white/95 px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))]">
+                        <button
+                          type="button"
+                          onClick={() => setMobileScreen('chat')}
+                          className="inline-flex h-14 w-full items-center justify-center gap-1 rounded-3xl bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
+                        >
+                        <img src={aiSparkleIcon} alt="" aria-hidden="true" className="h-4 w-4 shrink-0" />
+                        チャットでたずねる
+                      </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-full min-h-0 flex-col">
+              <header className="shrink-0 rounded-[22px] border border-white/70 bg-white/75 px-4 py-3 shadow-[0_16px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setMobileScreen('map')}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[0.78rem] font-medium text-slate-700 shadow-sm"
+                  >
+                    地図へ戻る
+                  </button>
+                  <span className="rounded-full border border-cyan-400/30 bg-cyan-50 px-2.5 py-1 text-[10px] font-medium text-cyan-700">
+                    {difyEndpoint ? 'Dify接続中' : '未接続'}
+                  </span>
+                </div>
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-700">2.エリアについて聞く</p>
+                <h2 className="mt-1 text-[1.05rem] font-semibold tracking-tight text-slate-950">
+                  {selectedArea?.name ?? 'エリアを選択してください'}
+                </h2>
+                <p className="mt-1 text-[0.84rem] leading-5 text-slate-700">
+                  {selectedArea?.note ?? '選択したエリアの特徴を質問できます。'}
+                </p>
+              </header>
+
+              <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] bg-slate-900 text-white shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
+                <div className="shrink-0 border-b border-white/10 px-4 py-3">
+                  <p className="text-[9px] uppercase tracking-[0.22em] text-slate-400">やり取り</p>
+                  <p className="mt-1 text-[0.95rem] font-semibold tracking-tight text-white">
+                    {selectedArea?.name ?? 'エリアを選択してください'}
+                  </p>
+                </div>
+
+                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+                  {renderedChatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[88%] rounded-[22px] px-3.5 py-2.5 text-[0.95rem] leading-[1.5] ${
+                          message.role === 'user'
+                            ? 'bg-cyan-500 text-slate-950'
+                            : 'border border-white/10 bg-white/7 text-slate-100'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {isSending ? (
+                    <div className="flex justify-start">
+                      <div className="rounded-[24px] border border-white/10 bg-white/7 px-4 py-3 text-[9px] leading-4 text-slate-300">
+                        送信中...
+                      </div>
+                    </div>
+                  ) : null}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <form
+                  className="shrink-0 border-t border-white/10 px-4 pt-3 pb-[calc(24px+env(safe-area-inset-bottom))]"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    sendChatMessage(chatInput)
+                  }}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-[9px] leading-4 text-cyan-100/70">Enter で送信 / Shift+Enter で改行</p>
+                  </div>
+                  <div className="flex items-end gap-3">
+                    <textarea
+                      id="chat-input-mobile"
+                      value={chatInput}
+                      onChange={(event) => setChatInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key !== 'Enter' || event.shiftKey || isComposingEvent(event)) return
+                        event.preventDefault()
+                        sendChatMessage(chatInput)
+                      }}
+                      rows={2}
+                      placeholder="入力例：このエリアはどんな観光体験に向いていますか？"
+                      style={{ fontSize: '1rem', lineHeight: '1.45' }}
+                      className="min-h-[56px] flex-1 resize-none rounded-2xl border border-cyan-300/25 bg-slate-900 px-4 py-3 text-[1rem] leading-[1.45] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-[1rem] placeholder:leading-[1.45] placeholder:text-slate-400 focus:border-cyan-300 focus:bg-slate-900"
+                    />
+                    <button
+                      type="submit"
+                      aria-label="メッセージを送信"
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-slate-950 shadow-[0_16px_32px_rgba(6,182,212,0.34)] transition active:scale-[0.98]"
+                    >
+                      <img src={sendPlaneIcon} alt="" aria-hidden="true" className="h-9 w-9 shrink-0" />
+                    </button>
+                  </div>
+                </form>
+
+                {chatError ? (
+                  <p className="shrink-0 border-t border-white/10 px-4 py-3 text-[0.86rem] leading-6 text-rose-100">
+                    {chatError}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="hidden lg:block h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.18),_transparent_30%),linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] text-slate-900">
       <div className="mx-auto flex h-full max-w-[1600px] flex-col overflow-hidden px-4 py-3 sm:px-5 lg:px-6 xl:px-8">
         <main className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(330px,360px)] xl:grid-cols-[minmax(0,1fr)_minmax(340px,380px)]">
           <section className="flex min-h-0 h-full flex-col gap-3">
@@ -625,7 +861,10 @@ function App() {
                       activeAreaId={activeAreaId}
                       popupAreaId={popupAreaId}
                       onSelectArea={handleSelectArea}
-                      onDismissPopup={() => setPopupAreaId('')}
+                      onDismissPopup={() => {
+                        setPopupAreaId('')
+                        setMobileDetailOpen(false)
+                      }}
                     />
                   ) : null}
                   {loading ? <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-cyan-300/20 bg-slate-900/80 px-4 py-3 text-sm text-cyan-100">エリア情報を読み込み中...</div> : null}
@@ -714,7 +953,8 @@ function App() {
           </aside>
         </main>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
