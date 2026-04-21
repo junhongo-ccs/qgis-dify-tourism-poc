@@ -104,8 +104,13 @@ Dify 接続まで含めて確認する場合:
 cd web
 nvm use
 cp -n .env.proxy.example .env.proxy
+set -a
+source .env.proxy
+set +a
 npm run dify:proxy
 ```
+
+`npm run dify:proxy` 単体では `.env.proxy` は自動で読み込まれません。上記のように shell で環境変数を export してから起動してください。
 
 必要な環境変数:
 
